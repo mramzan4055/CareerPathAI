@@ -126,3 +126,16 @@ class RecommendCoursesRequest(BaseModel):
 class RecommendCoursesResponse(BaseModel):
     status: str
     courses: List[Course]
+
+# Resume Review / ATS Score Models
+class ResumeSuggestion(BaseModel):
+    title: str
+    description: str
+    category: str
+    priority: str
+
+class ResumeReviewResponse(BaseModel):
+    status: str
+    cv_id: str
+    ats_score: int
+    suggestions: List[ResumeSuggestion]

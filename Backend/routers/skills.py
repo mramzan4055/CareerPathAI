@@ -1,7 +1,6 @@
 import json
 
 from fastapi import APIRouter, Depends, HTTPException
-from groq import AsyncGroq
 
 from auth import get_current_user_id
 from config import settings
@@ -13,6 +12,7 @@ from models import (
     SkillGapResponse,
     UpdateTargetRoleRequest,
 )
+from services.ai_client import get_ai_client
 
 
 def _assert_cv_ownership(supabase, cv_id: str, current_user_id: str, select: str) -> dict:
@@ -26,15 +26,6 @@ def _assert_cv_ownership(supabase, cv_id: str, current_user_id: str, select: str
     return cv_response.data
 
 router = APIRouter(prefix="/api/v1/skills", tags=["Skills & Gap Analysis"])
-
-async def get_ai_client() -> AsyncGroq:
-    """Returns an asynchronous Groq client."""
-    if not settings.groq_api_key or not settings.groq_api_key.startswith("gsk_"):
-        raise HTTPException(
-            status_code=500,
-            detail="Server configuration error: GROQ_API_KEY is missing or invalid.",
-        )
-    return AsyncGroq(api_key=settings.groq_api_key)
 
 @router.put("/target-role")
 async def update_target_role(request: UpdateTargetRoleRequest, current_user_id: str = Depends(get_current_user_id)):

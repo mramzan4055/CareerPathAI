@@ -190,6 +190,29 @@ export async function updateCV(cvId: string, data: CVData): Promise<ParsedCVResp
   return handleResponse<ParsedCVResponse>(res);
 }
 
+export interface ResumeSuggestion {
+  title: string;
+  description: string;
+  category: string;
+  priority: "High" | "Medium" | "Low";
+}
+
+export interface ResumeReviewResponse {
+  status: string;
+  cv_id: string;
+  ats_score: number;
+  suggestions: ResumeSuggestion[];
+}
+
+/** Runs a real AI ATS audit on a CV. Not cached -- calls the LLM fresh on every invocation. */
+export async function getResumeReview(cvId: string): Promise<ResumeReviewResponse> {
+  const res = await fetch(`${BASE_URL}/api/v1/parser/cv/${cvId}/review`, {
+    method: "POST",
+    headers: await getAuthHeaders(),
+  });
+  return handleResponse<ResumeReviewResponse>(res);
+}
+
 // ── Jobs ───────────────────────────────────────────────────────────────────
 
 /** Fetch jobs from Adzuna (with DB caching). */

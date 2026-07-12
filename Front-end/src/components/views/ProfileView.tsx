@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSupabaseAuth } from "@/providers/supabase-auth-provider";
 import { supabase } from "@/lib/supabase-browser";
 import { getCV, updateCV } from "@/lib/api";
@@ -29,6 +29,7 @@ import Link from "next/link";
 import { SkillTagBuilder } from "@/components/profile/skill-tag-builder";
 import { ProjectsTab } from "@/components/profile/projects-tab";
 import { EducationTab } from "@/components/profile/education-tab";
+import { CompletionMeter, computeProfileCompletion } from "@/components/profile/completion-meter";
 import type {
   FormProject,
   FormExperience,
@@ -69,6 +70,14 @@ export default function ProfilePage() {
   const [certificationsList, setCertificationsList] = useState<FormCert[]>([]);
   
   const [cvId, setCvId] = useState<string | null>(null);
+
+  const completion = useMemo(() => computeProfileCompletion({
+    name, targetRole, location, phone, linkedin, github, summary,
+    skillsCount: languagesList.length + frameworksList.length + databasesList.length + mlDomainList.length,
+    projectsCount: projectsList.filter(p => p.title.trim()).length,
+    educationCount: educationList.filter(e => e.degree.trim() && e.institution.trim()).length,
+    experienceCount: experienceList.filter(e => e.title.trim() && e.company.trim()).length,
+  }), [name, targetRole, location, phone, linkedin, github, summary, languagesList, frameworksList, databasesList, mlDomainList, projectsList, educationList, experienceList]);
 
   useEffect(() => {
     const loadProfileData = async () => {
@@ -385,6 +394,8 @@ export default function ProfilePage() {
           </Button>
         </div>
       </div>
+
+      <CompletionMeter result={completion} />
 
       {/* Tabs list */}
       <div className="flex flex-wrap gap-2 border-b border-slate-800/80 pb-2">

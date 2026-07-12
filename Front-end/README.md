@@ -59,7 +59,6 @@ src/
 │   ├── ui/                # Reusable UI primitives (shadcn-style)
 │   ├── views/             # Feature view components rendered by dashboard pages
 │   ├── auth-islands.tsx   # Auth-aware landing-page CTAs
-│   ├── job-detail-modal.tsx
 │   ├── course-placeholder.tsx
 │   └── user-button.tsx    # User profile button
 ├── lib/

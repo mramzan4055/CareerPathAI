@@ -34,6 +34,10 @@ def test_cv_get_requires_auth():
     assert client.get(f"/api/v1/parser/cv/{FAKE_UUID}").status_code == 401
 
 
+def test_cv_review_requires_auth():
+    assert client.post(f"/api/v1/parser/cv/{FAKE_UUID}/review").status_code == 401
+
+
 def test_skills_target_role_requires_auth():
     res = client.put(
         "/api/v1/skills/target-role",
