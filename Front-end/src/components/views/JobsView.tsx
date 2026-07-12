@@ -7,9 +7,11 @@ import {
   saveJob,
   setTargetRole,
   getSkillGapAnalysis,
+  getCourseRecommendations,
   type Job,
   type MatchedJob,
   type MissingSkill,
+  type Course,
 } from "@/lib/api";
 import { useSupabaseAuth } from "@/providers/supabase-auth-provider";
 import { supabase } from "@/lib/supabase-browser";
@@ -60,6 +62,8 @@ export default function JobsPage() {
   const [gapLoading, setGapLoading] = useState(false);
   const [gapError, setGapError] = useState("");
   const [analysisRun, setAnalysisRun] = useState(false);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loadingCourses, setLoadingCourses] = useState(false);
 
   // Sync CV ID
   useEffect(() => {
@@ -87,6 +91,7 @@ export default function JobsPage() {
   // Reset detail panel state when selected job changes
   useEffect(() => {
     setGaps([]);
+    setCourses([]);
     setGapError("");
     setAnalysisRun(false);
   }, [selectedJob?.id]);
@@ -169,11 +174,20 @@ export default function JobsPage() {
     setGapLoading(true);
     setGapError("");
     setGaps([]);
+    setCourses([]);
     try {
       await setTargetRole(cvId, selectedJob.id);
       const res = await getSkillGapAnalysis(cvId);
       setGaps(res.missing_skills);
       setAnalysisRun(true);
+      if (res.missing_skills.length > 0) {
+        // Fetch real course recommendations in the background
+        setLoadingCourses(true);
+        getCourseRecommendations(res.missing_skills)
+          .then(courseRes => setCourses(courseRes.courses))
+          .catch(err => console.error("Failed to load courses", err))
+          .finally(() => setLoadingCourses(false));
+      }
     } catch (err) {
       setGapError(err instanceof Error ? err.message : "Analysis failed");
     } finally {
@@ -553,7 +567,13 @@ export default function JobsPage() {
 
                         {/* Course Recommendations */}
                         <div className="pt-2 border-t border-slate-800/60">
-                          <CoursePlaceholder missingSkills={gaps} />
+                          {loadingCourses ? (
+                            <div className="flex items-center gap-2 text-xs text-slate-500 py-2">
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading course recommendations…
+                            </div>
+                          ) : (
+                            <CoursePlaceholder missingSkills={gaps} courses={courses} />
+                          )}
                         </div>
                       </div>
                     )

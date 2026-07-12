@@ -18,9 +18,11 @@ import { Button } from "@/components/ui/button";
 import {
   setTargetRole,
   getSkillGapAnalysis,
+  getCourseRecommendations,
   type Job,
   type MatchedJob,
   type MissingSkill,
+  type Course,
 } from "@/lib/api";
 import { CoursePlaceholder } from "@/components/course-placeholder";
 
@@ -59,6 +61,8 @@ export function JobDetailModal({ job, open, onClose }: JobDetailModalProps) {
   const [gapLoading, setGapLoading] = useState(false);
   const [gapError, setGapError] = useState("");
   const [analysisRun, setAnalysisRun] = useState(false);
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [loadingCourses, setLoadingCourses] = useState(false);
 
   const matchedJob = job as MatchedJob;
   const hasMatch = matchedJob?.match_percentage !== undefined;
@@ -66,6 +70,7 @@ export function JobDetailModal({ job, open, onClose }: JobDetailModalProps) {
   // Reset state when job changes
   useEffect(() => {
     setGaps([]);
+    setCourses([]);
     setGapError("");
     setAnalysisRun(false);
   }, [job?.id]);
@@ -100,11 +105,20 @@ export function JobDetailModal({ job, open, onClose }: JobDetailModalProps) {
     setGapLoading(true);
     setGapError("");
     setGaps([]);
+    setCourses([]);
     try {
       await setTargetRole(cvId, job.id);
       const res = await getSkillGapAnalysis(cvId);
       setGaps(res.missing_skills);
       setAnalysisRun(true);
+      if (res.missing_skills.length > 0) {
+        // Fetch real course recommendations in the background
+        setLoadingCourses(true);
+        getCourseRecommendations(res.missing_skills)
+          .then(courseRes => setCourses(courseRes.courses))
+          .catch(err => console.error("Failed to load courses", err))
+          .finally(() => setLoadingCourses(false));
+      }
     } catch (err) {
       setGapError(err instanceof Error ? err.message : "Analysis failed");
     } finally {
@@ -252,8 +266,14 @@ export function JobDetailModal({ job, open, onClose }: JobDetailModalProps) {
                   );
                 })}
 
-                {/* Course Recommendations Placeholder */}
-                <CoursePlaceholder missingSkills={gaps} />
+                {/* Course Recommendations */}
+                {loadingCourses ? (
+                  <div className="flex items-center gap-2 text-xs text-slate-500 py-2">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Loading course recommendations…
+                  </div>
+                ) : (
+                  <CoursePlaceholder missingSkills={gaps} courses={courses} />
+                )}
               </div>
             ) : (
               <div className="p-4 rounded-xl bg-slate-900/20 border border-slate-800/60 text-center">

@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, ExternalLink, GraduationCap, Sparkles } from "lucide-react";
+import { BookOpen, ExternalLink, GraduationCap } from "lucide-react";
 import type { MissingSkill } from "@/lib/api";
 
 // Future API integration type
@@ -33,13 +33,33 @@ const difficultyColors: Record<string, { text: string; bg: string; border: strin
 export function CoursePlaceholder({ missingSkills, courses }: CoursePlaceholderProps) {
   if (missingSkills.length === 0) return null;
 
-  // Use real courses if provided, otherwise generate placeholders from missing skills
-  const displayCourses: Course[] = courses && courses.length > 0
-    ? courses
+  // `courses` prop present (even if empty) means the caller fetched real
+  // recommendations. Only fall back to generated placeholders when no prop was
+  // passed at all (legacy callers). An empty array => real API returned nothing.
+  const usingRealCourses = courses !== undefined;
+
+  if (usingRealCourses && courses!.length === 0) {
+    return (
+      <div className="space-y-3 mt-6 pt-6 border-t border-slate-800/60">
+        <div className="flex items-center gap-2">
+          <div className="p-2 rounded-xl bg-amber-950/20 border border-amber-500/20 text-amber-400">
+            <BookOpen className="h-4 w-4" />
+          </div>
+          <h3 className="text-sm font-bold text-slate-200">📚 Recommended Learning Resources</h3>
+        </div>
+        <p className="text-[11px] text-slate-500 text-center py-2">
+          No specific course recommendations available right now — try again in a moment.
+        </p>
+      </div>
+    );
+  }
+
+  const displayCourses: Course[] = usingRealCourses
+    ? courses!
     : missingSkills.map((skill) => ({
         title: `Learn ${skill.skill}`,
-        provider: "Free API — Coming Soon",
-        url: "#",
+        provider: "Search online courses",
+        url: `https://www.coursera.org/search?query=${encodeURIComponent(skill.skill)}`,
         difficulty: difficultyFromImportance(skill.importance) as Course["difficulty"],
       }));
 
@@ -87,34 +107,19 @@ export function CoursePlaceholder({ missingSkills, courses }: CoursePlaceholderP
                 <span className="text-[10px] text-slate-500 font-medium">
                   {course.provider}
                 </span>
-                {course.url !== "#" ? (
-                  <a
-                    href={course.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-[10px] text-amber-400 hover:text-amber-300 font-semibold"
-                  >
-                    View <ExternalLink className="h-2.5 w-2.5" />
-                  </a>
-                ) : (
-                  <span className="flex items-center gap-1 text-[10px] text-slate-600 font-medium">
-                    <Sparkles className="h-2.5 w-2.5" /> Coming Soon
-                  </span>
-                )}
+                <a
+                  href={course.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1 text-[10px] text-amber-400 hover:text-amber-300 font-semibold"
+                >
+                  View <ExternalLink className="h-2.5 w-2.5" />
+                </a>
               </div>
             </div>
           );
         })}
       </div>
-
-      {/* Integration Notice */}
-      {(!courses || courses.length === 0) && (
-        <div className="text-center py-2">
-          <p className="text-[10px] text-slate-600">
-            🔌 Course recommendations will be powered by a free API integration — placeholder data shown above
-          </p>
-        </div>
-      )}
     </div>
   );
 }
