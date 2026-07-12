@@ -52,6 +52,14 @@ Follow these steps to run the backend API on your local machine for testing.
    ```
    The backend will now be running at `http://127.0.0.1:8000`.
 
+### Alternative: Docker
+
+With a `.env` file already set up (step 5 above):
+```bash
+docker compose up --build
+```
+This runs the same server at `http://127.0.0.1:8000` inside a container, using `.env` via `env_file`.
+
 ---
 
 ## 2. Environment Variables Setup

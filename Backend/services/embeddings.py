@@ -1,6 +1,7 @@
-from database import get_supabase
-import logging
 import json
+import logging
+
+from database import get_supabase
 
 logger = logging.getLogger(__name__)
 

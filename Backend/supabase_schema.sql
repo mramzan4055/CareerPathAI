@@ -127,11 +127,24 @@ $$;
 -- Create the saved_jobs table
 create table if not exists saved_jobs (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid not null, -- Designed to reference auth.users(id) eventually
+  user_id uuid not null references auth.users(id) on delete cascade,
   job_id uuid references jobs(id) on delete cascade,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   unique(user_id, job_id)
 );
+
+-- ==============================================================================
+-- MIGRATION (run this against an existing database whose saved_jobs.user_id has
+-- no FK constraint yet):
+--
+--   -- First, remove any orphaned rows (saved jobs for users that no longer
+--   -- exist) or the FK constraint below will fail to apply:
+--   delete from saved_jobs where user_id not in (select id from auth.users);
+--
+--   alter table saved_jobs
+--     add constraint saved_jobs_user_id_fkey
+--     foreign key (user_id) references auth.users(id) on delete cascade;
+-- ==============================================================================
 
 -- Add indexes to prevent Sequential Scans on large datasets
 create index if not exists idx_saved_jobs_user_id on saved_jobs(user_id);

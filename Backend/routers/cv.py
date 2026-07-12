@@ -1,11 +1,13 @@
 import json
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
-from pypdf import PdfReader
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from groq import AsyncGroq
-from config import settings
-from models import CVResponse, CVData
-from database import get_supabase
+from pypdf import PdfReader
+
 from auth import get_current_user_id
+from config import settings
+from database import get_supabase
+from models import CVData, CVResponse
 
 router = APIRouter(prefix="/api/v1/parser", tags=["CV Parser"])
 

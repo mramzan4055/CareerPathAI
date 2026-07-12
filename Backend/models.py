@@ -1,6 +1,8 @@
 # pyrefly: ignore [missing-import]
-from pydantic import BaseModel
 from typing import List, Optional
+
+from pydantic import BaseModel
+
 
 # CV Parser Models
 class CVEducation(BaseModel):

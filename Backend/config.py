@@ -1,8 +1,7 @@
-import os
 from pathlib import Path
 
 try:
-    from pydantic_settings import BaseSettings, SettingsConfigDict # type: ignore
+    from pydantic_settings import BaseSettings, SettingsConfigDict  # type: ignore
 except ImportError:
     from pydantic import BaseSettings
 

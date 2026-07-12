@@ -1,10 +1,18 @@
 import json
+
 from fastapi import APIRouter, Depends, HTTPException
 from groq import AsyncGroq
+
+from auth import get_current_user_id
 from config import settings
 from database import get_supabase
-from models import UpdateTargetRoleRequest, SkillGapResponse, MissingSkill, CustomGapRequest, RecommendCoursesRequest, RecommendCoursesResponse
-from auth import get_current_user_id
+from models import (
+    CustomGapRequest,
+    RecommendCoursesRequest,
+    RecommendCoursesResponse,
+    SkillGapResponse,
+    UpdateTargetRoleRequest,
+)
 
 
 def _assert_cv_ownership(supabase, cv_id: str, current_user_id: str, select: str) -> dict:

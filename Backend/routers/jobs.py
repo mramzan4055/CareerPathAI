@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 import httpx
-from config import settings
-from models import JobResponse, MatchRequest, MatchResponse, SaveJobRequest, SavedJobResponse, SavedJobListResponse
-from database import get_supabase
-from services.adzuna import get_or_fetch_jobs
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
+
 from auth import get_current_user_id
+from config import settings
+from database import get_supabase
+from models import MatchRequest, MatchResponse, SavedJobListResponse, SavedJobResponse, SaveJobRequest
+from services.adzuna import get_or_fetch_jobs
 
 router = APIRouter(prefix="/jobs", tags=["Jobs"])
 
@@ -95,7 +96,7 @@ async def save_job(request: SaveJobRequest, current_user_id: str = Depends(get_c
         raise HTTPException(status_code=500, detail="Database connection is not configured.")
 
     try:
-        response = supabase.table("saved_jobs").insert({
+        supabase.table("saved_jobs").insert({
             "user_id": current_user_id,
             "job_id": request.job_id
         }).execute()
@@ -137,7 +138,7 @@ async def unsave_job(job_id: str = Query(..., description="The ID of the job to 
         raise HTTPException(status_code=500, detail="Database connection is not configured.")
 
     try:
-        response = supabase.table("saved_jobs").delete().eq("user_id", current_user_id).eq("job_id", job_id).execute()
+        supabase.table("saved_jobs").delete().eq("user_id", current_user_id).eq("job_id", job_id).execute()
         return {"status": "success", "message": "Job unsaved successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to unsave job: {str(e)}")

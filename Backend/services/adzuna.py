@@ -1,11 +1,13 @@
-import httpx
 import json
 import logging
-from fastapi import BackgroundTasks
-from config import settings
-from groq import AsyncGroq
-from database import get_supabase
 from datetime import datetime, timedelta
+
+import httpx
+from fastapi import BackgroundTasks
+from groq import AsyncGroq
+
+from config import settings
+from database import get_supabase
 
 logger = logging.getLogger(__name__)
 
