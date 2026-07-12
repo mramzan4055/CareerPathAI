@@ -32,6 +32,7 @@ import {
 } from "@/lib/api";
 import { useSupabaseAuth } from "@/providers/supabase-auth-provider";
 import { supabase } from "@/lib/supabase-browser";
+import { sortJobsByInterest } from "@/lib/utils";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
@@ -140,18 +141,22 @@ export default function SkillsPage() {
     const syncAndLoad = async () => {
       setInitLoading(true);
       let cvId = localStorage.getItem("cv_id");
+      let interests: string[] = [];
 
-      if (!cvId && user) {
+      if (user) {
         try {
           const { data } = await supabase
             .from("profiles")
-            .select("cv_id")
+            .select("cv_id, interests")
             .eq("id", user.id)
             .maybeSingle();
 
-          if (data?.cv_id) {
+          if (!cvId && data?.cv_id) {
             cvId = data.cv_id;
             localStorage.setItem("cv_id", data.cv_id);
+          }
+          if (data?.interests) {
+            interests = data.interests.split(",").map((s: string) => s.trim()).filter(Boolean);
           }
         } catch {}
       }
@@ -162,10 +167,11 @@ export default function SkillsPage() {
       if (cvId) {
         try {
           const res = await matchJobs(cvId, 10);
-          setMatches(res.matches);
-          if (res.matches.length > 0) {
-            setSelectedJob(res.matches[0]);
-            await runAnalysisForJob(cvId, res.matches[0]);
+          const sortedMatches = sortJobsByInterest(res.matches, interests);
+          setMatches(sortedMatches);
+          if (sortedMatches.length > 0) {
+            setSelectedJob(sortedMatches[0]);
+            await runAnalysisForJob(cvId, sortedMatches[0]);
           }
         } catch (err) {
           console.error("Failed to load matches:", err);

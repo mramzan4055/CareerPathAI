@@ -194,6 +194,7 @@ create table if not exists profiles (
   github text,
   summary text,
   skills text,
+  interests text, -- comma-separated career interests, prioritized in job/skill-gap matching
   education text,
   experience text,
   projects jsonb,
@@ -202,6 +203,13 @@ create table if not exists profiles (
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
+
+-- ==============================================================================
+-- MIGRATION (run this against an existing database whose profiles table
+-- predates the interests column):
+--
+--   alter table profiles add column if not exists interests text;
+-- ==============================================================================
 
 -- Enable RLS for Profiles
 alter table profiles enable row level security;

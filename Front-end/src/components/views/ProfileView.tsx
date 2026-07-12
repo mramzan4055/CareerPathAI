@@ -49,6 +49,7 @@ export default function ProfilePage() {
   // ── Tab 1: Bio & Contact ──────────────────────────────────────────────────
   const [name, setName] = useState("");
   const [targetRole, setTargetRole] = useState("");
+  const [interestsList, setInterestsList] = useState<string[]>([]);
   const [location, setLocation] = useState("");
   const [phone, setPhone] = useState("");
   const [linkedin, setLinkedin] = useState("");
@@ -95,6 +96,9 @@ export default function ProfilePage() {
         if (profile) {
           setName(profile.name || "");
           setTargetRole(profile.target_role || "");
+          if (profile.interests) {
+            setInterestsList(profile.interests.split(",").map((s: string) => s.trim()).filter(Boolean));
+          }
           setLocation(profile.location || "");
           setPhone(profile.phone || "");
           setLinkedin(profile.linkedin || "");
@@ -286,6 +290,7 @@ export default function ProfilePage() {
           id: user.id,
           name,
           target_role: targetRole,
+          interests: interestsList.join(", "),
           phone,
           location,
           linkedin,
@@ -537,6 +542,19 @@ export default function ProfilePage() {
                     placeholder="github.com/username"
                     className="bg-slate-900/40 border-slate-800 text-slate-200 focus:border-slate-500/30 rounded-xl"
                   />
+                </div>
+
+                <div className="md:col-span-2">
+                  <SkillTagBuilder
+                    label="Career Interests"
+                    skills={interestsList}
+                    setSkills={setInterestsList}
+                    icon={<Target className="h-3.5 w-3.5 text-cyan-400" />}
+                    placeholder="e.g. AI Engineer, Product Manager, Data Scientist"
+                  />
+                  <p className="text-[10px] text-slate-500 mt-1.5">
+                    Roles you&apos;re especially interested in — job matches and skill-gap analysis will prioritize these first.
+                  </p>
                 </div>
               </div>
 

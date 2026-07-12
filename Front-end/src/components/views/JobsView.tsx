@@ -15,6 +15,7 @@ import {
 } from "@/lib/api";
 import { useSupabaseAuth } from "@/providers/supabase-auth-provider";
 import { supabase } from "@/lib/supabase-browser";
+import { sortJobsByInterest } from "@/lib/utils";
 import {
   Search,
   MapPin,
@@ -49,6 +50,7 @@ export default function JobsPage() {
   const [matchLoading, setMatchLoading] = useState(false);
   const [error, setError] = useState("");
   const [savedIds, setSavedIds] = useState<Set<string>>(new Set());
+  const [interests, setInterests] = useState<string[]>([]);
 
   // -- Local Filters State --
   const [localSearch, setLocalSearch] = useState('');
@@ -86,6 +88,24 @@ export default function JobsPage() {
       }
     };
     syncCVId();
+  }, [user]);
+
+  // Fetch career interests for match prioritization
+  useEffect(() => {
+    const fetchInterests = async () => {
+      if (!user) return;
+      try {
+        const { data } = await supabase
+          .from("profiles")
+          .select("interests")
+          .eq("id", user.id)
+          .maybeSingle();
+        if (data?.interests) {
+          setInterests(data.interests.split(",").map((s: string) => s.trim()).filter(Boolean));
+        }
+      } catch {}
+    };
+    fetchInterests();
   }, [user]);
 
   // Reset detail panel state when selected job changes
@@ -139,7 +159,7 @@ export default function JobsPage() {
     setSelectedJob(null);
     try {
       const res = await matchJobs(cvId, resultCount);
-      setMatchResults(res.matches);
+      setMatchResults(sortJobsByInterest(res.matches, interests));
       if (res.matches.length === 0)
         setError("No matches found yet. Make sure your CV is uploaded and jobs are in the DB.");
     } catch (err: unknown) {
