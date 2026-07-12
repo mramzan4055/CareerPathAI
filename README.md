@@ -44,7 +44,7 @@ Follow these steps to run the backend API on your local machine for testing.
    ```
 
 5. **Set up Environment Variables:**
-   Create a `.env` file in the root directory (where `main.py` is located) by copying the template. See the Environment Variables section below for details.
+   Copy `.env.example` to `.env` in the root directory (where `main.py` is located) and fill in real values. See the Environment Variables section below for details.
 
 6. **Run the FastAPI Server:**
    ```bash
@@ -56,25 +56,52 @@ Follow these steps to run the backend API on your local machine for testing.
 
 ## 2. Environment Variables Setup
 
-You must create a `.env` file in the root folder with the following variables. Do **not** commit this file to version control.
+You must create a `.env` file in the root folder (copy `.env.example` and fill in real values). Do **not** commit this file to version control.
 
 ```env
 # Groq API for LLM Parsing
 GROQ_API_KEY=gsk_your_groq_api_key_here
 
+# Gemini API (fallback LLM, used when Groq fails)
+GEMINI_API_KEY=your_gemini_api_key
+
 # Adzuna API for Job Fetching
 ADZUNA_APP_ID=your_adzuna_app_id
 ADZUNA_APP_KEY=your_adzuna_app_key
 
-# Supabase Database Credentials (Optional depending on your immediate needs)
+# Supabase Database Credentials
 SUPABASE_URL=https://your-project-id.supabase.co
 SUPABASE_KEY=your_supabase_anon_key
+# Required for writes (CVs/jobs/saved_jobs) to bypass RLS. If unset, the
+# backend falls back to SUPABASE_KEY and relies entirely on RLS policies.
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+
+# Comma-separated list of origins allowed to call this API (CORS)
+FRONTEND_ORIGINS=http://localhost:3000
 ```
 *(Note: Ask the backend lead for the actual keys during active development).*
 
 ---
 
-## 3. API Documentation (Swagger UI)
+## 3. Authentication
+
+Every endpoint except `GET /` and `GET /jobs/find` requires a Supabase session token:
+
+```
+Authorization: Bearer <supabase_access_token>
+```
+
+The backend verifies the token against Supabase Auth (`supabase.auth.get_user`) and derives the
+caller's `user_id` from it — it never trusts a client-supplied `user_id`. CV-scoped endpoints
+(`/api/v1/parser/cv/{cv_id}`, `/jobs/match`, everything under `/api/v1/skills`) additionally check
+that `cvs.user_id` matches the caller before returning or mutating data, returning `403` otherwise.
+
+On the frontend, get the token from the active Supabase session (`supabase.auth.getSession()`)
+— see `src/lib/api.ts`'s `getAuthHeaders()` in the Front-end repo for the reference implementation.
+
+---
+
+## 4. API Documentation (Swagger UI)
 
 FastAPI automatically generates interactive documentation. Once your server is running, simply navigate to:
 
@@ -84,87 +111,47 @@ From this interface, you can see all endpoints, their required data types, and y
 
 ---
 
-## 4. Endpoint Summary
+## 5. Endpoint Summary
 
-Here is a quick reference table of the available endpoints.
+All routes below require `Authorization: Bearer <token>` unless marked **Public**.
 
-### 4.1 Health Check
-Check if the API is online.
-- **Method:** `GET`
-- **Route:** `/`
-- **Response (200 OK):**
-  ```json
-  {
-    "status": "online",
-    "message": "KaamYabi AI Backend is running!"
-  }
-  ```
+### CV Parser — `routers/cv.py`
+| Method | Route | Notes |
+|---|---|---|
+| POST | `/api/v1/parser/resume` | Upload a PDF (`file` form field); parses it with Groq/Gemini and stores it as a new CV owned by the caller. |
+| GET | `/api/v1/parser/cv/{cv_id}` | Returns parsed CV data. 403 if the CV isn't owned by the caller. |
+| PUT | `/api/v1/parser/cv/{cv_id}` | Updates parsed CV data; clears `skill_gap_cache`. Ownership-checked. |
 
-### 4.2 Parse Resume (CV Module)
-Extracts structured JSON data from a PDF resume using AI.
-- **Method:** `POST`
-- **Route:** `/api/v1/parser/resume`
-- **Body / Form-Data:**
-  - `file`: A `.pdf` file
-- **Response (200 OK):**
-  ```json
-  {
-    "status": "success",
-    "extracted_data": {
-      "name": "John Doe",
-      "education": [
-        {
-          "degree": "BSc Computer Science",
-          "institution": "University XYZ"
-        }
-      ],
-      "skills": ["Python", "React", "FastAPI"],
-      "experience": ["Developed a full-stack AI application."]
-    }
-  }
-  ```
-- **Expected Errors:**
-  - `400 Bad Request`: If the file is not a PDF or cannot be parsed.
-  - `502 Bad Gateway`: If the Groq API fails.
+### Jobs — `routers/jobs.py`
+| Method | Route | Notes |
+|---|---|---|
+| GET | `/jobs/find` | **Public.** Fetches jobs from Adzuna (DB-cached 24h), vectorizes new ones in the background. |
+| POST | `/jobs/match` | Semantic match of a CV's embedding against stored jobs (pgvector cosine similarity). Ownership-checked on `cv_id`. |
+| POST | `/jobs/save` | Saves a job for the caller. |
+| GET | `/jobs/saved` | Lists the caller's saved jobs. |
+| DELETE | `/jobs/unsave` | Removes a saved job (`?job_id=...`) for the caller. |
 
-### 4.3 Find Cleaned Jobs (Job Module)
-Fetches raw jobs from Adzuna and uses AI to clean and format the descriptions.
-- **Method:** `GET`
-- **Route:** `/jobs/find`
-- **Query Parameters:**
-  - `query` (string, default: "software engineer")
-  - `location` (string, default: "us")
-  - `results` (integer, default: 5)
-  - *Example:* `/jobs/find?query=react%20developer&location=gb&results=3`
-- **Response (200 OK):**
-  ```json
-  {
-    "status": "success",
-    "total_jobs": 3,
-    "data": [
-      {
-        "job_title": "React Developer",
-        "company": "Tech Corp",
-        "location": "London",
-        "clean_description": "We are looking for a react developer to build amazing interfaces..."
-      }
-    ]
-  }
-  ```
-- **Expected Errors:**
-  - `404 Not Found`: No jobs found for the specific query/location.
-  - `500 Internal Server Error`: Adzuna or Groq API failure.
+### Skills & Gap Analysis — `routers/skills.py`
+| Method | Route | Notes |
+|---|---|---|
+| PUT | `/api/v1/skills/target-role` | Sets a CV's target job; clears `skill_gap_cache`. Ownership-checked. |
+| GET | `/api/v1/skills/gap-analysis/{cv_id}` | Compares CV skills against the target job (LLM), cached in `cvs.skill_gap_cache`. Ownership-checked. |
+| POST | `/api/v1/skills/gap-analysis/custom` | Same, but against a free-text job description instead of a stored job. Ownership-checked. |
+| POST | `/api/v1/skills/recommend-courses` | Recommends courses for a list of missing skills (LLM). |
+
+### Health
+| Method | Route | Notes |
+|---|---|---|
+| GET | `/` | **Public.** Health check. |
 
 ---
 
-## 5. Frontend Integration Advice
+## 6. Frontend Integration Advice
 
 As a frontend developer, keep the following best practices in mind when connecting to these APIs:
 
 ### 1. CORS (Cross-Origin Resource Sharing)
-- The backend is currently configured to allow `["*"]` (all origins) for local development convenience. 
-- You do not need to configure any special CORS headers in your frontend `fetch` or `axios` requests right now. 
-- *Note: Before production deployment, we will lock the origins down to your exact frontend domain.*
+- The backend only allows origins listed in the `FRONTEND_ORIGINS` env var (comma-separated). Make sure your frontend's dev/prod URL is included, or requests will be rejected by the browser.
 
 ### 2. Handling Async Loading States
 - The endpoints `/api/v1/parser/resume` and `/jobs/find` both rely on external LLM inference (Groq). 
