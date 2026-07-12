@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getSavedJobs, unsaveJob, type SavedJobEntry } from "@/lib/api";
+import { getSavedJobs, unsaveJob, updateSavedJobStatus, type SavedJobEntry, type JobApplicationStatus } from "@/lib/api";
 import { useSupabaseAuth } from "@/providers/supabase-auth-provider";
 import {
   Bookmark,
@@ -18,18 +18,49 @@ import {
   Clock,
   FileBadge,
   ExternalLink,
+  NotebookPen,
 } from "lucide-react";
 import { toast } from "sonner";
+
+const STATUS_OPTIONS: { value: JobApplicationStatus; label: string }[] = [
+  { value: "saved", label: "Saved" },
+  { value: "applied", label: "Applied" },
+  { value: "interviewing", label: "Interviewing" },
+  { value: "offer", label: "Offer" },
+  { value: "rejected", label: "Rejected" },
+  { value: "withdrawn", label: "Withdrawn" },
+];
+
+const statusStyles: Record<JobApplicationStatus, string> = {
+  saved: "bg-slate-700/40 text-slate-300 border-slate-600/40",
+  applied: "bg-blue-500/10 text-blue-400 border-blue-500/20",
+  interviewing: "bg-purple-500/10 text-purple-400 border-purple-500/20",
+  offer: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  rejected: "bg-red-500/10 text-red-400 border-red-500/20",
+  withdrawn: "bg-slate-800/60 text-slate-500 border-slate-700/40",
+};
 
 const SavedJobCard = ({
   entry,
   onUnsave,
+  onStatusChange,
+  onNotesChange,
 }: {
   entry: SavedJobEntry;
   onUnsave: (jobId: string) => void;
+  onStatusChange: (savedJobId: string, status: JobApplicationStatus) => void;
+  onNotesChange: (savedJobId: string, notes: string) => void;
 }) => {
   const [expanded, setExpanded] = useState(false);
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [notesDraft, setNotesDraft] = useState(entry.notes || "");
   const job = entry.jobs;
+
+  const handleNotesBlur = () => {
+    if (notesDraft !== (entry.notes || "")) {
+      onNotesChange(entry.id, notesDraft);
+    }
+  };
 
   return (
     <div className="p-5 rounded-2xl bg-slate-900/30 border border-slate-800/80 hover:border-blue-500/15 transition-all duration-300 space-y-3">
@@ -49,7 +80,7 @@ const SavedJobCard = ({
               </span>
               {job?.salary_min && (
                 <span className="flex items-center gap-1 text-xs font-medium text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-md border border-emerald-400/20">
-                  <DollarSign className="h-3 w-3" /> 
+                  <DollarSign className="h-3 w-3" />
                   ${job.salary_min.toLocaleString()}{job.salary_max ? ` - $${job.salary_max.toLocaleString()}` : ""}
                 </span>
               )}
@@ -93,14 +124,48 @@ const SavedJobCard = ({
         </>
       )}
 
+      {/* Application status + notes */}
+      <div className="flex flex-wrap items-center gap-2 pt-1">
+        <select
+          value={entry.status}
+          onChange={(e) => onStatusChange(entry.id, e.target.value as JobApplicationStatus)}
+          className={`text-xs font-bold px-2.5 py-1.5 rounded-lg border cursor-pointer focus:outline-none ${statusStyles[entry.status]}`}
+        >
+          {STATUS_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value} className="bg-slate-900 text-slate-200">
+              {opt.label}
+            </option>
+          ))}
+        </select>
+
+        <button
+          onClick={() => setNotesOpen(!notesOpen)}
+          className="flex items-center gap-1 text-xs text-slate-500 hover:text-slate-300 px-2.5 py-1.5 rounded-lg border border-slate-800 hover:border-slate-700 transition-colors"
+        >
+          <NotebookPen className="h-3.5 w-3.5" />
+          {entry.notes ? "Edit notes" : "Add notes"}
+        </button>
+      </div>
+
+      {notesOpen && (
+        <textarea
+          value={notesDraft}
+          onChange={(e) => setNotesDraft(e.target.value)}
+          onBlur={handleNotesBlur}
+          placeholder="e.g. Interviewed with hiring manager on Friday, follow up next week..."
+          rows={2}
+          className="w-full bg-slate-950/60 border border-slate-800 rounded-xl p-3 text-xs text-slate-300 focus:outline-none focus:border-blue-500/50 resize-none"
+        />
+      )}
+
       <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-800/60">
         <div className="text-[10px] text-slate-500 font-medium">
           Saved {new Date(entry.created_at).toLocaleDateString(undefined, { dateStyle: "medium" })}
         </div>
         {job?.url && (
-          <a 
-            href={job.url} 
-            target="_blank" 
+          <a
+            href={job.url}
+            target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-1.5 text-xs font-bold text-blue-400 hover:text-blue-300 transition-colors bg-blue-500/10 hover:bg-blue-500/20 px-3 py-1.5 rounded-lg border border-blue-500/20"
           >
@@ -153,6 +218,32 @@ export default function SavedJobsPage() {
     }
   };
 
+  const handleStatusChange = async (savedJobId: string, status: JobApplicationStatus) => {
+    const previous = jobs;
+    setJobs((prev) => prev.map((j) => (j.id === savedJobId ? { ...j, status } : j)));
+    try {
+      await updateSavedJobStatus(savedJobId, status);
+      toast.success("Application status updated");
+    } catch {
+      setJobs(previous);
+      toast.error("Failed to update status");
+    }
+  };
+
+  const handleNotesChange = async (savedJobId: string, notes: string) => {
+    const previous = jobs;
+    setJobs((prev) => prev.map((j) => (j.id === savedJobId ? { ...j, notes } : j)));
+    try {
+      const entry = jobs.find((j) => j.id === savedJobId);
+      if (!entry) return;
+      await updateSavedJobStatus(savedJobId, entry.status, notes);
+      toast.success("Notes saved");
+    } catch {
+      setJobs(previous);
+      toast.error("Failed to save notes");
+    }
+  };
+
   return (
     <div className="space-y-6 max-w-3xl">
       {/* Header */}
@@ -161,7 +252,7 @@ export default function SavedJobsPage() {
           <Bookmark className="h-6 w-6 text-purple-400" /> Saved Jobs
         </h1>
         <p className="text-slate-400 text-sm mt-1">
-          Jobs you&apos;ve bookmarked for later review. Remove any you&apos;re no longer interested in.
+          Jobs you&apos;ve bookmarked for later review. Track your application status and add notes as you go.
         </p>
       </div>
 
@@ -200,7 +291,13 @@ export default function SavedJobsPage() {
         <div className="space-y-3">
           <p className="text-xs text-slate-500">{jobs.length} saved job{jobs.length !== 1 ? "s" : ""}</p>
           {jobs.map((entry) => (
-            <SavedJobCard key={entry.id} entry={entry} onUnsave={handleUnsave} />
+            <SavedJobCard
+              key={entry.id}
+              entry={entry}
+              onUnsave={handleUnsave}
+              onStatusChange={handleStatusChange}
+              onNotesChange={handleNotesChange}
+            />
           ))}
         </div>
       )}

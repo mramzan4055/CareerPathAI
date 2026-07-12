@@ -129,13 +129,20 @@ create table if not exists saved_jobs (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references auth.users(id) on delete cascade,
   job_id uuid references jobs(id) on delete cascade,
+  status text not null default 'saved',
+  notes text,
+  status_updated_at timestamp with time zone default timezone('utc'::text, now()) not null,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   unique(user_id, job_id)
 );
 
+alter table saved_jobs
+  add constraint saved_jobs_status_check
+  check (status in ('saved', 'applied', 'interviewing', 'offer', 'rejected', 'withdrawn'));
+
 -- ==============================================================================
 -- MIGRATION (run this against an existing database whose saved_jobs.user_id has
--- no FK constraint yet):
+-- no FK constraint yet, or that predates the status/notes columns below):
 --
 --   -- First, remove any orphaned rows (saved jobs for users that no longer
 --   -- exist) or the FK constraint below will fail to apply:
@@ -144,6 +151,13 @@ create table if not exists saved_jobs (
 --   alter table saved_jobs
 --     add constraint saved_jobs_user_id_fkey
 --     foreign key (user_id) references auth.users(id) on delete cascade;
+--
+--   -- Job Application Tracker (Phase 2): status/notes on existing saved_jobs rows
+--   alter table saved_jobs add column if not exists status text not null default 'saved';
+--   alter table saved_jobs add column if not exists notes text;
+--   alter table saved_jobs add column if not exists status_updated_at timestamp with time zone default timezone('utc'::text, now()) not null;
+--   alter table saved_jobs add constraint if not exists saved_jobs_status_check
+--     check (status in ('saved', 'applied', 'interviewing', 'offer', 'rejected', 'withdrawn'));
 -- ==============================================================================
 
 -- Add indexes to prevent Sequential Scans on large datasets
@@ -160,6 +174,10 @@ create policy "Users can view own saved jobs."
 create policy "Users can insert own saved jobs."
   on saved_jobs for insert
   with check ( auth.uid() = user_id );
+
+create policy "Users can update own saved jobs."
+  on saved_jobs for update
+  using ( auth.uid() = user_id );
 
 create policy "Users can delete own saved jobs."
   on saved_jobs for delete
@@ -199,3 +217,61 @@ create policy "Users can update own profile."
 create policy "Users can insert own profile."
   on profiles for insert
   with check ( auth.uid() = id );
+
+-- ==============================================================================
+-- Phase 2: Saved Learning Plans + AI Cover Letter Generator
+-- ==============================================================================
+
+-- Create the learning_plans table (persisted skill-gap study roadmaps)
+create table if not exists learning_plans (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  cv_id uuid references cvs(id) on delete set null,
+  target_job_id uuid references jobs(id) on delete set null,
+  title text not null,
+  plan_data jsonb not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+create index if not exists idx_learning_plans_user_id on learning_plans(user_id);
+
+alter table learning_plans enable row level security;
+
+create policy "Users can view own learning plans."
+  on learning_plans for select
+  using ( auth.uid() = user_id );
+
+create policy "Users can insert own learning plans."
+  on learning_plans for insert
+  with check ( auth.uid() = user_id );
+
+create policy "Users can delete own learning plans."
+  on learning_plans for delete
+  using ( auth.uid() = user_id );
+
+-- Create the cover_letters table (AI-generated, saved on demand)
+create table if not exists cover_letters (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  cv_id uuid references cvs(id) on delete set null,
+  job_id uuid references jobs(id) on delete set null,
+  title text not null,
+  content text not null,
+  created_at timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
+create index if not exists idx_cover_letters_user_id on cover_letters(user_id);
+
+alter table cover_letters enable row level security;
+
+create policy "Users can view own cover letters."
+  on cover_letters for select
+  using ( auth.uid() = user_id );
+
+create policy "Users can insert own cover letters."
+  on cover_letters for insert
+  with check ( auth.uid() = user_id );
+
+create policy "Users can delete own cover letters."
+  on cover_letters for delete
+  using ( auth.uid() = user_id );

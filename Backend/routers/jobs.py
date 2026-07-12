@@ -1,10 +1,19 @@
+from datetime import datetime, timezone
+
 import httpx
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 
 from auth import get_current_user_id
 from config import settings
 from database import get_supabase
-from models import MatchRequest, MatchResponse, SavedJobListResponse, SavedJobResponse, SaveJobRequest
+from models import (
+    MatchRequest,
+    MatchResponse,
+    SavedJobListResponse,
+    SavedJobResponse,
+    SaveJobRequest,
+    UpdateSavedJobStatusRequest,
+)
 from services.adzuna import get_or_fetch_jobs
 
 router = APIRouter(prefix="/jobs", tags=["Jobs"])
@@ -120,13 +129,49 @@ async def get_saved_jobs(current_user_id: str = Depends(get_current_user_id)):
 
     try:
         response = supabase.table("saved_jobs").select(
-            "id, created_at, jobs(*)"
+            "id, created_at, status, notes, status_updated_at, jobs(*)"
         ).eq("user_id", current_user_id).order("created_at", desc=True).execute()
 
         data = response.data if response.data else []
         return {"status": "success", "data": data}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch saved jobs: {str(e)}")
+
+@router.patch("/saved/{saved_job_id}/status", response_model=SavedJobResponse)
+async def update_saved_job_status(
+    saved_job_id: str,
+    request: UpdateSavedJobStatusRequest,
+    current_user_id: str = Depends(get_current_user_id),
+):
+    """
+    Updates the application status (and optional notes) of a saved job.
+    Only the owning user may update it.
+    """
+    supabase = get_supabase()
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Database connection is not configured.")
+
+    try:
+        existing = supabase.table("saved_jobs").select("user_id").eq("id", saved_job_id).maybe_single().execute()
+        if not existing or not existing.data:
+            raise HTTPException(status_code=404, detail="Saved job not found.")
+
+        if existing.data.get("user_id") != current_user_id:
+            raise HTTPException(status_code=403, detail="You do not have access to this saved job.")
+
+        update_payload = {
+            "status": request.status,
+            "status_updated_at": datetime.now(timezone.utc).isoformat(),
+        }
+        if request.notes is not None:
+            update_payload["notes"] = request.notes
+
+        supabase.table("saved_jobs").update(update_payload).eq("id", saved_job_id).execute()
+        return {"status": "success", "message": "Application status updated"}
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to update status: {str(e)}")
 
 @router.delete("/unsave")
 async def unsave_job(job_id: str = Query(..., description="The ID of the job to unsave"), current_user_id: str = Depends(get_current_user_id)):

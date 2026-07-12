@@ -119,9 +119,14 @@ export interface SkillGapResponse {
   missing_skills: MissingSkill[];
 }
 
+export type JobApplicationStatus = "saved" | "applied" | "interviewing" | "offer" | "rejected" | "withdrawn";
+
 export interface SavedJobEntry {
   id: string;
   created_at: string;
+  status: JobApplicationStatus;
+  notes: string | null;
+  status_updated_at: string;
   jobs: Job;
 }
 
@@ -266,6 +271,20 @@ export async function unsaveJob(jobId: string): Promise<{ status: string; messag
   return handleResponse(res);
 }
 
+/** Update the application status (and optional notes) of a saved job. */
+export async function updateSavedJobStatus(
+  savedJobId: string,
+  status: JobApplicationStatus,
+  notes?: string
+): Promise<{ status: string; message: string }> {
+  const res = await fetch(`${BASE_URL}/jobs/saved/${savedJobId}/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
+    body: JSON.stringify({ status, ...(notes !== undefined ? { notes } : {}) }),
+  });
+  return handleResponse(res);
+}
+
 // ── Skills ─────────────────────────────────────────────────────────────────
 
 /** Set the target job role for a CV. */
@@ -315,4 +334,99 @@ export async function getCourseRecommendations(skills: MissingSkill[]): Promise<
   };
   if (skills.length === 0) return fetcher();
   return withSessionCache(`courses_${skills.map(s => s.skill).join("_")}`, fetcher);
+}
+
+// ── Learning Plans ────────────────────────────────────────────────────────
+
+export interface LearningPlan {
+  id: string;
+  title: string;
+  plan_data: Record<string, unknown>;
+  created_at: string;
+}
+
+export interface LearningPlanListResponse {
+  status: string;
+  data: LearningPlan[];
+}
+
+/** Persists a skill-gap study roadmap so it can be revisited later. */
+export async function saveLearningPlan(
+  title: string,
+  planData: Record<string, unknown>,
+  cvId?: string,
+  targetJobId?: string
+): Promise<{ status: string; id: string }> {
+  const res = await fetch(`${BASE_URL}/api/v1/learning-plans`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
+    body: JSON.stringify({ title, plan_data: planData, cv_id: cvId, target_job_id: targetJobId }),
+  });
+  return handleResponse(res);
+}
+
+/** Lists all learning plans saved by the signed-in user. */
+export async function getLearningPlans(): Promise<LearningPlanListResponse> {
+  const res = await fetch(`${BASE_URL}/api/v1/learning-plans`, {
+    headers: await getAuthHeaders(),
+  });
+  return handleResponse<LearningPlanListResponse>(res);
+}
+
+/** Deletes a saved learning plan. */
+export async function deleteLearningPlan(planId: string): Promise<{ status: string; message: string }> {
+  const res = await fetch(`${BASE_URL}/api/v1/learning-plans/${planId}`, {
+    method: "DELETE",
+    headers: await getAuthHeaders(),
+  });
+  return handleResponse(res);
+}
+
+// ── Cover Letters ────────────────────────────────────────────────────────
+
+export interface CoverLetter {
+  id: string;
+  title: string;
+  content: string;
+  created_at: string;
+}
+
+export interface CoverLetterListResponse {
+  status: string;
+  data: CoverLetter[];
+}
+
+/** Generates a personalized cover letter from a CV and a job, and saves it. */
+export async function generateCoverLetter(
+  cvId: string,
+  options: { jobId?: string; jobDescription?: string; tone?: string } = {}
+): Promise<{ status: string; id: string; content: string }> {
+  const res = await fetch(`${BASE_URL}/api/v1/cover-letters/generate`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
+    body: JSON.stringify({
+      cv_id: cvId,
+      job_id: options.jobId,
+      job_description: options.jobDescription,
+      tone: options.tone || "professional",
+    }),
+  });
+  return handleResponse(res);
+}
+
+/** Lists all cover letters saved by the signed-in user. */
+export async function getCoverLetters(): Promise<CoverLetterListResponse> {
+  const res = await fetch(`${BASE_URL}/api/v1/cover-letters`, {
+    headers: await getAuthHeaders(),
+  });
+  return handleResponse<CoverLetterListResponse>(res);
+}
+
+/** Deletes a saved cover letter. */
+export async function deleteCoverLetter(letterId: string): Promise<{ status: string; message: string }> {
+  const res = await fetch(`${BASE_URL}/api/v1/cover-letters/${letterId}`, {
+    method: "DELETE",
+    headers: await getAuthHeaders(),
+  });
+  return handleResponse(res);
 }

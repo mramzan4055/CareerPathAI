@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings, validate_keys
-from routers import cv, jobs, skills
+from routers import cover_letters, cv, jobs, learning_plans, skills
 
 # Validate essential configuration keys on startup
 try:
@@ -29,6 +29,8 @@ app.add_middleware(
 app.include_router(cv.router)
 app.include_router(jobs.router)
 app.include_router(skills.router)
+app.include_router(learning_plans.router)
+app.include_router(cover_letters.router)
 
 @app.get("/", tags=["Health"])
 def health_check():

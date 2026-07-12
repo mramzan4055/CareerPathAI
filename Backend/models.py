@@ -1,7 +1,9 @@
 # pyrefly: ignore [missing-import]
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from pydantic import BaseModel
+
+JobApplicationStatus = Literal["saved", "applied", "interviewing", "offer", "rejected", "withdrawn"]
 
 
 # CV Parser Models
@@ -94,6 +96,10 @@ class SavedJobListResponse(BaseModel):
     status: str
     data: List[dict]
 
+class UpdateSavedJobStatusRequest(BaseModel):
+    status: JobApplicationStatus
+    notes: Optional[str] = None
+
 # Skill Gap Analysis Models
 class UpdateTargetRoleRequest(BaseModel):
     cv_id: str
@@ -126,6 +132,49 @@ class RecommendCoursesRequest(BaseModel):
 class RecommendCoursesResponse(BaseModel):
     status: str
     courses: List[Course]
+
+# Saved Learning Plan Models
+class SaveLearningPlanRequest(BaseModel):
+    cv_id: Optional[str] = None
+    target_job_id: Optional[str] = None
+    title: str
+    plan_data: dict
+
+class LearningPlan(BaseModel):
+    id: str
+    title: str
+    plan_data: dict
+    created_at: str
+
+class LearningPlanListResponse(BaseModel):
+    status: str
+    data: List[LearningPlan]
+
+class SaveLearningPlanResponse(BaseModel):
+    status: str
+    id: str
+
+# Cover Letter Models
+class GenerateCoverLetterRequest(BaseModel):
+    cv_id: str
+    job_id: Optional[str] = None
+    job_description: Optional[str] = None
+    tone: Optional[str] = "professional"
+
+class CoverLetter(BaseModel):
+    id: str
+    title: str
+    content: str
+    created_at: str
+
+class CoverLetterListResponse(BaseModel):
+    status: str
+    data: List[CoverLetter]
+
+class GenerateCoverLetterResponse(BaseModel):
+    status: str
+    id: str
+    content: str
 
 # Resume Review / ATS Score Models
 class ResumeSuggestion(BaseModel):

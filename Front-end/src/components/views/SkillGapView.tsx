@@ -10,6 +10,9 @@ import {
   GraduationCap,
   Sparkles,
   ChevronRight,
+  BookmarkPlus,
+  BookMarked,
+  Trash2,
 } from 'lucide-react';
 import { CoursePlaceholder } from "@/components/course-placeholder";
 import {
@@ -19,9 +22,13 @@ import {
   getSkillGapAnalysis,
   getCustomSkillGapAnalysis,
   getCourseRecommendations,
+  saveLearningPlan,
+  getLearningPlans,
+  deleteLearningPlan,
   type MatchedJob,
   type MissingSkill,
   type Course,
+  type LearningPlan,
 } from "@/lib/api";
 import { useSupabaseAuth } from "@/providers/supabase-auth-provider";
 import { supabase } from "@/lib/supabase-browser";
@@ -53,6 +60,11 @@ export default function SkillsPage() {
   const [selectedGap, setSelectedGap] = useState<MissingSkill | null>(null);
   const [hoveredSkill, setHoveredSkill] = useState<string | null>(null);
   const [showRoadmap, setShowRoadmap] = useState(false);
+  const [cvId, setCvId] = useState<string | null>(null);
+  const [savingPlan, setSavingPlan] = useState(false);
+  const [savedPlans, setSavedPlans] = useState<LearningPlan[]>([]);
+  const [showSavedPlans, setShowSavedPlans] = useState(false);
+  const [loadingSavedPlans, setLoadingSavedPlans] = useState(false);
 
   // -- Search State --
   const [searchQuery, setSearchQuery] = useState("");
@@ -145,6 +157,7 @@ export default function SkillsPage() {
       }
 
       setHasCv(Boolean(cvId));
+      setCvId(cvId);
 
       if (cvId) {
         try {
@@ -163,6 +176,36 @@ export default function SkillsPage() {
 
     syncAndLoad();
   }, [user]);
+
+  const fetchSavedPlans = async () => {
+    if (!user) return;
+    setLoadingSavedPlans(true);
+    try {
+      const res = await getLearningPlans();
+      setSavedPlans(res.data);
+    } catch (err) {
+      console.error("Failed to load saved learning plans:", err);
+    } finally {
+      setLoadingSavedPlans(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSavedPlans();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  const handleDeletePlan = async (planId: string) => {
+    const previous = savedPlans;
+    setSavedPlans(prev => prev.filter(p => p.id !== planId));
+    try {
+      await deleteLearningPlan(planId);
+      toast.success("Roadmap deleted");
+    } catch {
+      setSavedPlans(previous);
+      toast.error("Failed to delete roadmap");
+    }
+  };
 
   if (initLoading) {
     return (
@@ -222,6 +265,32 @@ export default function SkillsPage() {
     { skills: mediumGaps, title: 'Strengthen Core Competencies', desc: 'Build working fluency in the moderately important skills.', color: 'indigo' },
     { skills: lowGaps, title: 'Polish & Differentiate', desc: 'Round out the nice-to-have skills to stand out from other candidates.', color: 'cyan' },
   ].filter(p => p.skills.length > 0);
+
+  const handleSaveRoadmap = async () => {
+    if (!selectedJob || gaps.length === 0) return;
+    setSavingPlan(true);
+    try {
+      const planData = {
+        jobTitle: selectedJob.job_title,
+        company: selectedJob.company,
+        readinessScore,
+        estimatedWeeks,
+        phases: phases.map(p => ({ title: p.title, desc: p.desc, skills: p.skills })),
+      };
+      await saveLearningPlan(
+        `${selectedJob.job_title} Roadmap`,
+        planData,
+        cvId || undefined,
+        selectedJob.id || undefined
+      );
+      toast.success("Roadmap saved! Find it under My Saved Roadmaps.");
+      fetchSavedPlans();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to save roadmap");
+    } finally {
+      setSavingPlan(false);
+    }
+  };
 
   // Radar: top gaps as "coverage vs requirement". Coverage is an estimate
   // derived from each gap's priority (higher priority => larger gap).
@@ -606,6 +675,71 @@ export default function SkillsPage() {
                     </div>
                   );
                 })}
+              </div>
+            )}
+
+            {phases.length > 0 && (
+              <button
+                onClick={handleSaveRoadmap}
+                disabled={savingPlan}
+                className="w-full py-2 rounded-lg bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 font-bold text-xs hover:bg-indigo-600/30 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+              >
+                {savingPlan ? (
+                  <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Saving...</>
+                ) : (
+                  <><BookmarkPlus className="w-3.5 h-3.5" /> Save This Roadmap</>
+                )}
+              </button>
+            )}
+          </div>
+
+          {/* My Saved Roadmaps */}
+          <div className="p-5 bg-slate-900/30 border border-slate-800/80 rounded-2xl space-y-4">
+            <button
+              onClick={() => setShowSavedPlans(!showSavedPlans)}
+              className="w-full flex items-center justify-between text-left"
+            >
+              <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                <BookMarked className="w-4 h-4 text-indigo-400" /> My Saved Roadmaps
+                {savedPlans.length > 0 && (
+                  <span className="text-[10px] font-mono text-slate-500">({savedPlans.length})</span>
+                )}
+              </h3>
+              <ChevronRight className={`w-4 h-4 text-slate-500 transition-transform ${showSavedPlans ? 'rotate-90' : ''}`} />
+            </button>
+
+            {showSavedPlans && (
+              <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                {loadingSavedPlans ? (
+                  <div className="flex items-center justify-center py-6">
+                    <Loader2 className="w-5 h-5 animate-spin text-blue-500" />
+                  </div>
+                ) : savedPlans.length === 0 ? (
+                  <p className="text-xs text-slate-500 text-center py-4">
+                    No saved roadmaps yet. Generate an analysis above and click &quot;Save This Roadmap&quot;.
+                  </p>
+                ) : (
+                  savedPlans.map(plan => (
+                    <div
+                      key={plan.id}
+                      className="flex items-center justify-between gap-2 p-3 rounded-xl bg-slate-900/40 border border-slate-800/80"
+                    >
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-slate-200 truncate">{plan.title}</div>
+                        <div className="text-[10px] text-slate-500 mt-0.5">
+                          Saved {new Date(plan.created_at).toLocaleDateString(undefined, { dateStyle: "medium" })}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleDeletePlan(plan.id)}
+                        title="Delete roadmap"
+                        className="p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-colors flex-shrink-0"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))
+                )}
               </div>
             )}
           </div>

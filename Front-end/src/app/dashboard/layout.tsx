@@ -11,6 +11,7 @@ import {
   Briefcase,
   Bookmark,
   TrendingUp,
+  Mail,
   LogOut,
   Loader2,
   Menu,
@@ -23,6 +24,7 @@ const navItems = [
   { href: "/dashboard/jobs", label: "Job Matches", icon: Briefcase },
   { href: "/dashboard/saved", label: "Saved Jobs", icon: Bookmark },
   { href: "/dashboard/skills", label: "Skill Gap", icon: TrendingUp },
+  { href: "/dashboard/cover-letters", label: "Cover Letters", icon: Mail },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
