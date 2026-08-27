@@ -17,6 +17,9 @@ import {
   Loader2,
   MapPin,
   GraduationCap,
+  Zap,
+  Star,
+  ArrowRight,
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -121,44 +124,73 @@ export default function DashboardPage() {
   // ── 1. If NO CV is uploaded, show a simplified onboarding view ──
   if (!hasCv) {
     return (
-      <div className="space-y-6 animate-in fade-in duration-500">
-        <div className="relative overflow-hidden rounded-2xl border border-slate-800/80 bg-[#070b14] p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.1),transparent_50%)]" />
-          <div className="relative z-10 space-y-2">
-            <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-100">
-              Welcome, <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">{name}</span> 👋
-            </h1>
-            <p className="text-sm text-slate-400 max-w-xl">
-              Your AI career partner is ready. Upload your CV to generate a semantic profile and unlock personalized job matching, skill gap analysis, and more.
-            </p>
-          </div>
-          <div className="relative z-10 shrink-0">
+      <div className="space-y-6 animate-in fade-in duration-500 max-w-4xl">
+        {/* Hero welcome */}
+        <div className="relative overflow-hidden rounded-2xl border border-blue-500/20 bg-gradient-to-br from-blue-950/40 to-indigo-950/30 p-8">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.12),transparent_60%)]" />
+          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
+          <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+            <div className="space-y-3">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/15 border border-blue-500/25 text-blue-400 text-xs font-bold">
+                <Sparkles className="w-3.5 h-3.5" />
+                AI Career Partner Ready
+              </div>
+              <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-100">
+                Welcome, <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">{name}</span> 👋
+              </h1>
+              <p className="text-sm text-slate-400 max-w-lg leading-relaxed">
+                Upload your CV to generate a semantic profile and unlock AI job matching, skill gap analysis, cover letter generation, and more.
+              </p>
+            </div>
             <button
               onClick={() => router.push("/dashboard/cv")}
-              className="px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white transition-all font-bold text-sm flex items-center gap-2 shadow-lg shadow-blue-500/25"
+              className="group shrink-0 flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-sm transition-all shadow-lg shadow-blue-500/30 hover:-translate-y-0.5 duration-200"
             >
               <FileText className="w-4 h-4" />
               Upload CV to Start
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="p-6 bg-slate-900/30 border border-slate-800/80 rounded-2xl space-y-4">
-            <h3 className="text-base font-bold text-slate-100">Getting Started Checklist</h3>
-            <div className="space-y-3">
-              {goals.map((g) => (
-                <div
-                  key={g.id}
-                  className="flex items-start gap-3 p-3 rounded-xl bg-slate-900/40 border border-slate-800/50"
-                >
-                  <div className="h-5 w-5 rounded-full bg-slate-800 flex items-center justify-center text-slate-400 text-xs shrink-0 mt-0.5">
-                    {g.id}
-                  </div>
-                  <span className="text-sm text-slate-300 font-medium">{g.text}</span>
-                </div>
-              ))}
+        {/* What you unlock */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {[
+            { icon: Briefcase, color: "text-blue-400 bg-blue-500/10 border-blue-500/20", title: "Semantic Job Matching", desc: "pgvector cosine similarity against thousands of live postings." },
+            { icon: TrendingUp, color: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20", title: "Skill Gap Analysis", desc: "Identify exactly what skills are blocking your target role." },
+            { icon: Activity, color: "text-indigo-400 bg-indigo-500/10 border-indigo-500/20", title: "Application Tracker", desc: "Kanban pipeline from saved → interview → offer." },
+            { icon: Sparkles, color: "text-violet-400 bg-violet-500/10 border-violet-500/20", title: "AI Cover Letters", desc: "Personalized cover letters in seconds, any tone." },
+          ].map(item => (
+            <div key={item.title} className="p-5 bg-slate-900/30 border border-slate-800/80 rounded-2xl flex items-start gap-4">
+              <div className={`w-9 h-9 rounded-xl border flex items-center justify-center shrink-0 ${item.color}`}>
+                <item.icon className="w-4.5 h-4.5" />
+              </div>
+              <div>
+                <div className="text-sm font-bold text-slate-200 mb-0.5">{item.title}</div>
+                <p className="text-xs text-slate-500 leading-relaxed">{item.desc}</p>
+              </div>
             </div>
+          ))}
+        </div>
+
+        {/* Checklist */}
+        <div className="p-6 bg-slate-900/30 border border-slate-800/80 rounded-2xl space-y-4">
+          <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+            <Target className="w-4 h-4 text-blue-400" /> Getting Started Checklist
+          </h3>
+          <div className="space-y-2">
+            {goals.map((g) => (
+              <div
+                key={g.id}
+                className="flex items-center gap-3 p-3 rounded-xl bg-slate-900/40 border border-slate-800/50 hover:border-slate-700 transition-colors"
+              >
+                <div className="h-5 w-5 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-500 text-[10px] font-black shrink-0">
+                  {g.id}
+                </div>
+                <span className="text-sm text-slate-300 font-medium flex-1">{g.text}</span>
+                <ChevronRight className="w-4 h-4 text-slate-600" />
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -169,11 +201,12 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6 select-none animate-in fade-in duration-500">
       {/* Welcome Banner */}
-      <div className="relative overflow-hidden rounded-2xl border border-slate-800/80 bg-[#070b14] p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.1),transparent_50%)]" />
+      <div className="relative overflow-hidden rounded-2xl border border-blue-500/15 bg-gradient-to-br from-blue-950/30 to-[#070b14] p-6 md:p-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(59,130,246,0.12),transparent_60%)]" />
+        <div className="absolute bottom-0 right-0 w-48 h-48 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none" />
         <div className="relative z-10 space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-950/30 border border-blue-500/20 text-blue-400">
-            <Sparkles className="w-3.5 h-3.5" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/15 border border-blue-500/25 text-blue-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
             <span className="text-[10px] font-bold uppercase tracking-wider">Semantic Profile Active</span>
           </div>
           <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-slate-100">
@@ -183,25 +216,25 @@ export default function DashboardPage() {
             {profile.target_role ? (
               <>Targeting <strong className="text-blue-400 font-bold">{profile.target_role}</strong>. </>
             ) : null}
-            Your semantic profile is synchronized. We have found <strong className="text-blue-400 font-bold">{matches.length} high-match positions</strong> for you.
+            Your semantic profile is live. Found <strong className="text-slate-200 font-bold">{matches.length}</strong> high-match positions for you.
           </p>
         </div>
 
         <div className="relative z-10 flex gap-3 shrink-0">
           <button
             onClick={() => router.push("/dashboard/jobs")}
-            className="px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800/50 hover:bg-slate-800 transition-all font-bold text-xs flex items-center gap-2 text-slate-200"
+            className="px-4 py-2.5 rounded-xl border border-slate-700 bg-slate-800/60 hover:bg-slate-800 transition-all font-bold text-xs flex items-center gap-2 text-slate-200 hover:border-slate-600"
           >
             <Briefcase className="w-3.5 h-3.5" />
-            View Job Matches
+            Job Matches
           </button>
           
           <button
             onClick={() => router.push("/dashboard/skills")}
-            className="px-4 py-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-all font-bold text-xs flex items-center gap-2 shadow-lg shadow-blue-500/20"
+            className="px-4 py-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-500 transition-all font-bold text-xs flex items-center gap-2 shadow-lg shadow-blue-500/25"
           >
             <TrendingUp className="w-3.5 h-3.5" />
-            Analyze Skill Gaps
+            Skill Gaps
           </button>
         </div>
       </div>
@@ -290,14 +323,14 @@ export default function DashboardPage() {
           {/* Stats Row */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             
-            <div className="p-5 bg-slate-900/30 border border-slate-800/80 rounded-2xl flex items-center justify-between">
+            <div className="p-5 bg-slate-900/30 border border-slate-800/80 rounded-2xl flex items-center justify-between hover:border-slate-700 transition-colors">
               <div>
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Top Match</span>
                 <span className="text-3xl font-black text-blue-400 block">
-                  {statsLoading ? "..." : (topMatches[0]?.match_percentage || "0")}%
+                  {statsLoading ? "…" : (topMatches[0]?.match_percentage || "0")}%
                 </span>
-                <span className="text-[10px] text-cyan-400 flex items-center gap-1 font-bold mt-1">
-                  <Activity className="w-3 h-3" /> Optimum
+                <span className="text-[10px] text-emerald-400 flex items-center gap-1 font-bold mt-1">
+                  <Zap className="w-3 h-3" /> Best fit found
                 </span>
               </div>
               <div className="w-14 h-14 relative shrink-0">
@@ -388,39 +421,55 @@ export default function DashboardPage() {
           {/* Top Matches */}
           <div className="p-5 bg-slate-900/30 border border-slate-800/80 rounded-2xl space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="text-base font-bold text-slate-100">Top Semantic Matches</h3>
-              <button onClick={() => router.push("/dashboard/jobs")} className="text-xs text-blue-400 font-bold hover:text-blue-300">
-                See All
+              <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                <Star className="w-4 h-4 text-amber-400" /> Top Semantic Matches
+              </h3>
+              <button
+                onClick={() => router.push("/dashboard/jobs")}
+                className="text-[11px] text-blue-400 font-bold hover:text-blue-300 flex items-center gap-1"
+              >
+                See All <ChevronRight className="w-3 h-3" />
               </button>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               {statsLoading ? (
-                <div className="flex justify-center py-4"><Loader2 className="h-5 w-5 animate-spin text-slate-500" /></div>
+                <div className="flex justify-center py-6">
+                  <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
+                </div>
               ) : topMatches.length === 0 ? (
-                <p className="text-xs text-slate-500 py-2">No matches found yet.</p>
+                <div className="py-6 text-center">
+                  <Briefcase className="w-8 h-8 text-slate-700 mx-auto mb-2" />
+                  <p className="text-xs text-slate-500">No matches yet. Head to Job Matches to fetch live jobs.</p>
+                </div>
               ) : (
-                topMatches.map(job => (
+                topMatches.map((job, idx) => (
                   <div 
                     key={job.id} 
                     onClick={() => router.push("/dashboard/jobs")}
-                    className="p-3.5 rounded-xl bg-slate-800/30 hover:bg-slate-800/60 border border-slate-700/40 flex items-center justify-between cursor-pointer transition-all hover:border-blue-500/30"
+                    className="group p-3 rounded-xl bg-slate-800/30 hover:bg-blue-950/20 border border-slate-700/40 hover:border-blue-500/30 flex items-center justify-between cursor-pointer transition-all"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-8 h-8 rounded-lg bg-blue-950/30 border border-blue-500/20 flex items-center justify-center shrink-0 text-blue-400">
-                        <Briefcase className="w-4 h-4" />
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-xs font-black ${
+                        idx === 0 ? "bg-amber-500/15 text-amber-400 border border-amber-500/20" :
+                        idx === 1 ? "bg-blue-500/15 text-blue-400 border border-blue-500/20" :
+                        "bg-slate-700/50 text-slate-400 border border-slate-600/50"
+                      }`}>
+                        #{idx + 1}
                       </div>
-                      <div className="min-w-0 pr-2">
+                      <div className="min-w-0">
                         <div className="text-xs font-bold text-slate-200 truncate">{job.job_title}</div>
-                        <div className="text-[10px] text-slate-400 truncate">{job.company} • {job.location}</div>
+                        <div className="text-[10px] text-slate-500 truncate">{job.company}</div>
                       </div>
                     </div>
                     
-                    <div className="text-right shrink-0">
-                      <span className="px-2 py-0.5 rounded-md bg-green-500/10 border border-green-500/20 text-green-400 text-[10px] font-mono font-bold block">
-                        {job.match_percentage}%
-                      </span>
-                    </div>
+                    <span className={`shrink-0 px-2 py-0.5 rounded-md text-[10px] font-mono font-black border ${
+                      job.match_percentage >= 90
+                        ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                        : "bg-indigo-500/10 border-indigo-500/20 text-indigo-400"
+                    }`}>
+                      {job.match_percentage}%
+                    </span>
                   </div>
                 ))
               )}
@@ -429,22 +478,48 @@ export default function DashboardPage() {
 
           {/* Active Career Goals */}
           <div className="p-5 bg-slate-900/30 border border-slate-800/80 rounded-2xl space-y-4">
-            <h3 className="text-base font-bold text-slate-100">Career Goal Tracker</h3>
-            
-            <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                <Target className="w-4 h-4 text-blue-400" /> Goal Tracker
+              </h3>
+              <span className="text-[10px] text-slate-500 font-mono">
+                {goals.filter(g => g.done).length}/{goals.length} done
+              </span>
+            </div>
+
+            {/* Progress bar */}
+            <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full transition-all duration-700"
+                style={{ width: `${(goals.filter(g => g.done).length / goals.length) * 100}%` }}
+              />
+            </div>
+
+            <div className="space-y-2">
               {goals.map(g => (
                 <div 
                   key={g.id} 
                   onClick={() => toggleGoal(g.id)}
-                  className="flex items-start gap-3 p-2.5 rounded-lg hover:bg-slate-800/40 cursor-pointer transition-colors border border-transparent hover:border-slate-700/50"
+                  className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-all border ${
+                    g.done
+                      ? "border-green-500/10 bg-green-500/5"
+                      : "border-slate-800/60 hover:border-slate-700 hover:bg-slate-800/40"
+                  }`}
                 >
-                  <input 
-                    type="checkbox" 
-                    checked={g.done}
-                    onChange={() => {}} 
-                    className="mt-0.5 accent-blue-500 shrink-0 cursor-pointer"
-                  />
-                  <span className={`text-xs leading-relaxed ${g.done ? 'text-slate-500 line-through' : 'text-slate-300 font-medium'}`}>
+                  <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-all ${
+                    g.done
+                      ? "bg-blue-500 border-blue-500"
+                      : "border-slate-600"
+                  }`}>
+                    {g.done && (
+                      <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className={`text-xs leading-relaxed flex-1 ${
+                    g.done ? "text-slate-500 line-through" : "text-slate-300 font-medium"
+                  }`}>
                     {g.text}
                   </span>
                 </div>
@@ -454,25 +529,37 @@ export default function DashboardPage() {
 
           {/* Live System Activity Feed */}
           <div className="p-5 bg-slate-900/30 border border-slate-800/80 rounded-2xl space-y-4">
-            <div className="flex justify-between items-center">
-              <h3 className="text-sm font-bold text-slate-100">Live Match Feed</h3>
-              <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
+                <Activity className="w-4 h-4 text-emerald-400" /> Live Match Feed
+              </h3>
+              <div className="flex items-center gap-1.5 text-[10px] text-emerald-400 font-mono font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                LIVE
+              </div>
             </div>
 
-            <div className="space-y-3 max-h-48 overflow-y-auto custom-scrollbar pr-1">
+            <div className="space-y-2 max-h-52 overflow-y-auto custom-scrollbar pr-1">
               {statsLoading ? (
-                <div className="flex justify-center"><Loader2 className="h-4 w-4 animate-spin text-slate-500" /></div>
+                <div className="flex justify-center py-4">
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                </div>
               ) : recentFeed.length === 0 ? (
-                 <p className="text-xs text-slate-500">Waiting for matches...</p>
+                <p className="text-[11px] text-slate-500 text-center py-4">Sync jobs to see your live feed.</p>
               ) : (
                 recentFeed.map((feed, idx) => (
-                  <div key={feed.id || idx} className="text-[10px] font-mono leading-relaxed text-slate-400 border-l border-blue-500/30 pl-3 py-1 space-y-1 relative">
-                    <div className="absolute -left-[3px] top-2 w-1.5 h-1.5 rounded-full bg-blue-500" />
-                    <div className="flex justify-between font-bold text-slate-200">
-                      <span className="truncate pr-2">{feed.job_title}</span>
-                      <span className="text-blue-400 shrink-0">{feed.match_percentage}% match</span>
+                  <div
+                    key={feed.id || idx}
+                    className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-800/30 border border-slate-700/30 hover:border-slate-600/50 transition-colors"
+                  >
+                    <div className="w-1.5 h-8 rounded-full bg-gradient-to-b from-blue-500 to-indigo-500 shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-bold text-slate-200 truncate">{feed.job_title}</div>
+                      <div className="text-[10px] text-slate-500 truncate">{feed.company}</div>
                     </div>
-                    <div className="truncate">Found at <strong className="text-slate-300">{feed.company}</strong></div>
+                    <span className="text-[10px] font-mono font-black text-indigo-400 shrink-0">
+                      {feed.match_percentage}%
+                    </span>
                   </div>
                 ))
               )}

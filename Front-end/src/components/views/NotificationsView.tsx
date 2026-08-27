@@ -283,12 +283,12 @@ export default function NotificationsView() {
       </div>
 
       {/* Filter toggle */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 p-1 rounded-xl bg-slate-900/40 border border-slate-800 w-fit">
         <button
           onClick={() => setUnreadOnly(false)}
-          className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+          className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
             !unreadOnly
-              ? "bg-slate-700 text-slate-100"
+              ? "bg-slate-700 text-slate-100 shadow-sm"
               : "text-slate-400 hover:text-slate-300"
           }`}
         >
@@ -296,9 +296,9 @@ export default function NotificationsView() {
         </button>
         <button
           onClick={() => setUnreadOnly(true)}
-          className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+          className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
             unreadOnly
-              ? "bg-slate-700 text-slate-100"
+              ? "bg-slate-700 text-slate-100 shadow-sm"
               : "text-slate-400 hover:text-slate-300"
           }`}
         >
@@ -312,15 +312,20 @@ export default function NotificationsView() {
           <Loader2 className="w-6 h-6 animate-spin text-blue-500" />
         </div>
       ) : notifications.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-center space-y-3">
-          <BellOff className="w-12 h-12 text-slate-600" />
-          <p className="text-slate-400 font-medium">
-            {unreadOnly ? "No unread notifications" : "No notifications yet"}
-          </p>
-          <p className="text-slate-500 text-sm max-w-xs">
-            When new job matches are found or your applications need follow-up,
-            you&apos;ll see them here.
-          </p>
+        <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
+          <div className="w-16 h-16 rounded-2xl bg-slate-800/60 border border-slate-700 flex items-center justify-center">
+            <BellOff className="w-8 h-8 text-slate-500" />
+          </div>
+          <div>
+            <p className="text-slate-300 font-bold text-sm">
+              {unreadOnly ? "All caught up!" : "No notifications yet"}
+            </p>
+            <p className="text-slate-500 text-xs max-w-xs mt-1 leading-relaxed">
+              {unreadOnly
+                ? "No unread notifications. Check \"All\" to see read ones."
+                : "Job match alerts, reminders, and system updates will appear here."}
+            </p>
+          </div>
         </div>
       ) : (
         <div className="space-y-3">

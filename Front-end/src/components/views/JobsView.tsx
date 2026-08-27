@@ -44,11 +44,13 @@ type TabType = "search" | "matches";
 
 // Source label + colour for the UI badge
 const SOURCE_META: Record<string, { label: string; color: string }> = {
-  arbeitnow: { label: "Arbeitnow", color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" },
-  jobicy:    { label: "Jobicy",    color: "text-violet-400 bg-violet-500/10 border-violet-500/20" },
-  adzuna:    { label: "Adzuna",    color: "text-amber-400  bg-amber-500/10  border-amber-500/20"  },
-  admin_import: { label: "Import", color: "text-slate-400  bg-slate-500/10  border-slate-500/20"  },
-  database:  { label: "Cached",   color: "text-blue-400   bg-blue-500/10   border-blue-500/20"   },
+  arbeitnow:    { label: "Arbeitnow",  color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20" },
+  jobicy:       { label: "Jobicy",     color: "text-violet-400  bg-violet-500/10  border-violet-500/20"  },
+  greenhouse:   { label: "Greenhouse", color: "text-green-400   bg-green-500/10   border-green-500/20"   },
+  lever:        { label: "Lever",      color: "text-rose-400    bg-rose-500/10    border-rose-500/20"    },
+  adzuna:       { label: "Adzuna",     color: "text-amber-400   bg-amber-500/10   border-amber-500/20"   },
+  admin_import: { label: "Import",     color: "text-slate-400   bg-slate-500/10   border-slate-500/20"   },
+  database:     { label: "Cached",     color: "text-blue-400    bg-blue-500/10    border-blue-500/20"    },
 };
 
 function SourceBadge({ source }: { source?: string }) {
@@ -298,11 +300,12 @@ export default function JobsPage() {
           <h1 className="text-2xl font-extrabold text-slate-100 flex items-center gap-2">
             <Briefcase className="h-6 w-6 text-blue-400" /> Job Discovery & Matching
           </h1>
-          <p className="text-slate-400 text-sm mt-1 flex items-center gap-2">
-            Powered by{" "}
-            <SourceBadge source="arbeitnow" />{" "}
-            <SourceBadge source="jobicy" />{" "}
-            <span className="text-slate-600">+ optional Adzuna</span>
+          <p className="text-slate-400 text-sm mt-1 flex items-center flex-wrap gap-1.5">
+            <span className="text-slate-500 text-xs">Sources:</span>
+            <SourceBadge source="arbeitnow" />
+            <SourceBadge source="jobicy" />
+            <SourceBadge source="greenhouse" />
+            <SourceBadge source="lever" />
           </p>
         </div>
 
@@ -349,11 +352,13 @@ export default function JobsPage() {
             <select
               value={sourceFilter}
               onChange={e => setSourceFilter(e.target.value)}
-              className="bg-slate-900/60 border border-slate-700/50 text-slate-100 text-sm rounded-xl px-3 py-2.5 outline-none sm:w-36"
+              className="bg-slate-900/60 border border-slate-700/50 text-slate-100 text-sm rounded-xl px-3 py-2.5 outline-none sm:w-40"
             >
               <option value="">All Sources</option>
               <option value="arbeitnow">Arbeitnow</option>
               <option value="jobicy">Jobicy</option>
+              <option value="greenhouse">Greenhouse</option>
+              <option value="lever">Lever</option>
               <option value="adzuna">Adzuna</option>
             </select>
             <select
@@ -486,7 +491,7 @@ export default function JobsPage() {
               <div className="text-sm font-bold text-slate-300">No jobs to display</div>
               <p className="text-xs text-slate-500">
                 {activeTab === "search"
-                  ? "Click Fetch Jobs — Arbeitnow and Jobicy are always available, no API key needed."
+                  ? "Click Fetch Jobs — Arbeitnow, Jobicy, Greenhouse & Lever are always free."
                   : "Click Find Matches after uploading your CV."}
               </p>
             </div>

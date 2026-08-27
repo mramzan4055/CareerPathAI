@@ -211,8 +211,10 @@ export default function CVPage() {
             onDragLeave={() => setDragOver(false)}
             onDrop={handleDrop}
             onClick={() => inputRef.current?.click()}
-            className={`relative flex flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed p-12 cursor-pointer transition-all duration-300 ${
-              dragOver ? "border-blue-500 bg-blue-950/20" : "border-slate-700 hover:border-blue-500/50 hover:bg-slate-900/40 bg-slate-900/20"
+            className={`relative flex flex-col items-center justify-center gap-5 rounded-2xl border-2 border-dashed p-14 cursor-pointer transition-all duration-300 group ${
+              dragOver
+                ? "border-blue-500 bg-blue-950/25 shadow-lg shadow-blue-500/10"
+                : "border-slate-700/80 hover:border-blue-500/50 hover:bg-slate-900/40 bg-slate-900/20"
             }`}
           >
             <input
@@ -222,14 +224,29 @@ export default function CVPage() {
               className="hidden"
               onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); }}
             />
-            <div className="h-16 w-16 rounded-2xl bg-blue-950/30 border border-blue-500/20 flex items-center justify-center">
-              <UploadCloud className="h-8 w-8 text-blue-400" />
+            <div className={`h-20 w-20 rounded-2xl flex items-center justify-center transition-all duration-300 ${
+              dragOver
+                ? "bg-blue-500/20 border-2 border-blue-500/50 scale-110"
+                : "bg-blue-950/30 border border-blue-500/20 group-hover:bg-blue-950/50 group-hover:border-blue-500/40"
+            }`}>
+              <UploadCloud className={`h-10 w-10 transition-colors duration-300 ${
+                dragOver ? "text-blue-300" : "text-blue-400"
+              }`} />
             </div>
-            <div className="text-center">
-              <p className="text-slate-200 font-semibold text-base">{dragOver ? "Drop it here!" : "Drag & drop your PDF here"}</p>
-              <p className="text-slate-500 text-sm mt-1">or click to browse</p>
+            <div className="text-center space-y-1">
+              <p className="text-slate-100 font-bold text-lg">
+                {dragOver ? "📥 Drop it here!" : "Drag & drop your PDF resume"}
+              </p>
+              <p className="text-slate-500 text-sm">or <span className="text-blue-400 font-semibold">click to browse</span></p>
             </div>
-            <p className="text-xs text-slate-600 border border-slate-800 px-3 py-1 rounded-full">PDF files only</p>
+            <div className="flex items-center gap-4 text-[10px] text-slate-600 font-mono">
+              <span className="flex items-center gap-1.5 border border-slate-800 px-2.5 py-1 rounded-full">
+                <FileText className="w-3 h-3" /> PDF only
+              </span>
+              <span className="flex items-center gap-1.5 border border-slate-800 px-2.5 py-1 rounded-full">
+                <Sparkles className="w-3 h-3" /> AI extracted in &lt;10s
+              </span>
+            </div>
           </div>
 
           {selectedFile && (
@@ -255,11 +272,13 @@ export default function CVPage() {
           <Button
             onClick={handleUpload}
             disabled={!selectedFile || state === "uploading"}
-            className="w-full h-12 text-sm font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-500/25"
+            className="w-full h-13 text-sm font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl shadow-xl shadow-blue-500/25 disabled:opacity-50 disabled:shadow-none transition-all"
           >
             {state === "uploading" ? (
-              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing CV with AI...</>
-            ) : "Extract & Save Profile"}
+              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Parsing with AI…</>
+            ) : (
+              <><Sparkles className="mr-2 h-4 w-4" /> Extract & Save Profile</>
+            )}
           </Button>
         </div>
       ) : (

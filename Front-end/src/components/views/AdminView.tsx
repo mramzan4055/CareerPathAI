@@ -114,7 +114,13 @@ export default function AdminView() {
             {sources.map(src => (
               <div
                 key={src.id}
-                className="p-5 bg-slate-900/30 border border-slate-800/80 rounded-2xl space-y-3"
+                className={`p-5 rounded-2xl space-y-3 border transition-colors ${
+                  src.health.status === "ok"
+                    ? "bg-slate-900/30 border-slate-800/80 hover:border-slate-700"
+                    : src.health.status === "not_configured"
+                    ? "bg-amber-950/10 border-amber-500/15"
+                    : "bg-red-950/10 border-red-500/15"
+                }`}
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -123,22 +129,27 @@ export default function AdminView() {
                       : <Key className="w-4 h-4 text-amber-400" />}
                     <span className="font-bold text-slate-100 text-sm">{src.name}</span>
                   </div>
-                  {healthIcon(src.health.status)}
+                  <div className="flex items-center gap-1.5">
+                    {healthIcon(src.health.status)}
+                    <span className={`text-[10px] font-bold ${
+                      src.health.status === "ok" ? "text-green-400" :
+                      src.health.status === "not_configured" ? "text-amber-400" :
+                      "text-red-400"
+                    }`}>
+                      {healthLabel(src.health.status)}
+                    </span>
+                  </div>
                 </div>
 
                 <p className="text-xs text-slate-400 leading-relaxed">{src.description}</p>
 
-                <div className="flex items-center justify-between text-xs">
-                  <span className={`font-semibold ${src.health.status === "ok" ? "text-green-400" : src.health.status === "not_configured" ? "text-amber-400" : "text-red-400"}`}>
-                    {healthIcon(src.health.status)}
-                    {" "}{healthLabel(src.health.status)}
-                  </span>
-                  <span className={`px-2 py-0.5 rounded-md border text-[10px] font-semibold ${
+                <div className="flex items-center justify-between">
+                  <span className={`px-2 py-0.5 rounded-md border text-[10px] font-bold ${
                     src.requires_key
                       ? "text-amber-400 bg-amber-500/10 border-amber-500/20"
                       : "text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
                   }`}>
-                    {src.requires_key ? "Key required" : "No key needed"}
+                    {src.requires_key ? "🔑 Key required" : "✓ Free to use"}
                   </span>
                 </div>
 

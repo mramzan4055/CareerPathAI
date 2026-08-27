@@ -1,408 +1,601 @@
-import React from "react";
-import dynamic from "next/dynamic";
-import { HeroCTA, FinalCTA, FooterAuthLinks } from "@/components/auth-islands";
+import Link from "next/link";
 import {
-  Briefcase, Search, FileText, CheckCircle, TrendingUp, Bot,
-  Clock, XCircle, Compass, UploadCloud, Cpu, CheckCheck,
-  Sparkles, Zap, Check
+  Sparkles,
+  Briefcase,
+  TrendingUp,
+  Mail,
+  Bot,
+  ArrowRight,
+  CheckCircle,
+  Zap,
+  Globe,
+  Shield,
+  BarChart3,
+  Target,
+  Users,
+  Star,
+  ChevronRight,
+  Database,
+  BrainCircuit,
+  Layers,
 } from "lucide-react";
 
-// Lazy-load the UserButton since it needs auth + dropdown (heavy Radix deps)
-const UserButton = dynamic(() => import("@/components/user-button"), {
-  ssr: false,
-  loading: () => <div className="w-[120px] h-10" />,
-});
+// ── Feature data ──────────────────────────────────────────────────────────────
 
-export default function Home() {
+const FEATURES = [
+  {
+    icon: BrainCircuit,
+    color: "from-blue-500 to-indigo-600",
+    glow: "shadow-blue-500/20",
+    badge: "Core",
+    title: "AI Resume Parsing",
+    desc: "Upload your PDF and our LLM extracts every detail — skills, roles, education, projects — into a structured profile ready for semantic matching.",
+  },
+  {
+    icon: Target,
+    color: "from-indigo-500 to-purple-600",
+    glow: "shadow-indigo-500/20",
+    badge: "Core",
+    title: "Semantic Job Matching",
+    desc: "pgvector cosine similarity compares your entire CV embedding against thousands of live job postings. No keyword stuffing — pure meaning.",
+  },
+  {
+    icon: TrendingUp,
+    color: "from-cyan-500 to-blue-600",
+    glow: "shadow-cyan-500/20",
+    badge: "Analysis",
+    title: "Skill Gap Analysis",
+    desc: "Pinpoint exactly which skills you need for your target role — ranked by impact — and get a personalised week-by-week learning roadmap.",
+  },
+  {
+    icon: Mail,
+    color: "from-violet-500 to-purple-600",
+    glow: "shadow-violet-500/20",
+    badge: "Automation",
+    title: "AI Cover Letters",
+    desc: "Generate job-specific cover letters in seconds. Choose your tone — Professional, Enthusiastic, Formal, or Conversational — and copy instantly.",
+  },
+  {
+    icon: Globe,
+    color: "from-emerald-500 to-teal-600",
+    glow: "shadow-emerald-500/20",
+    badge: "Live Data",
+    title: "4-Source Job Feed",
+    desc: "Aggregates Arbeitnow, Jobicy, Greenhouse (14 boards), and Lever (15 companies) — thousands of live listings, zero API key required.",
+  },
+  {
+    icon: BarChart3,
+    color: "from-amber-500 to-orange-600",
+    glow: "shadow-amber-500/20",
+    badge: "Tracker",
+    title: "Application Kanban",
+    desc: "Track every application from Saved → Applied → Interviewing → Offer with a full audit trail and daily apply-limit enforcement.",
+  },
+];
+
+const STEPS = [
+  {
+    num: "01",
+    color: "from-blue-600 to-indigo-600",
+    title: "Upload your CV",
+    desc: "Drop your PDF and our AI parses it into a rich structured profile — skills, roles, projects, education — in under 10 seconds.",
+    pill: "< 10 seconds",
+  },
+  {
+    num: "02",
+    color: "from-indigo-600 to-purple-600",
+    title: "Get AI-matched jobs",
+    desc: "Your CV embedding is compared against thousands of live postings via cosine similarity. Top matches appear ranked by semantic fit.",
+    pill: "Powered by pgvector",
+  },
+  {
+    num: "03",
+    color: "from-purple-600 to-pink-600",
+    title: "Apply & track progress",
+    desc: "Identify skill gaps, generate tailored cover letters, and track every application through a full Kanban pipeline with reminders.",
+    pill: "Full audit trail",
+  },
+];
+
+const STATS = [
+  { value: "4", unit: "Live Sources", sub: "Arbeitnow · Jobicy · Greenhouse · Lever", color: "text-blue-400" },
+  { value: "29", unit: "Boards & Orgs", sub: "Curated company boards, always fresh", color: "text-indigo-400" },
+  { value: "100%", unit: "Zero Cost", sub: "No paid APIs required to run", color: "text-emerald-400" },
+];
+
+const TECH_PILLS = [
+  "FastAPI", "Next.js 14", "Supabase", "pgvector", "Groq LLaMA 3.1",
+  "Greenhouse API", "Lever API", "Arbeitnow", "Jobicy", "APScheduler", "ReportLab",
+];
+
+// ── Page component ─────────────────────────────────────────────────────────────
+
+export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#030712] text-slate-100 font-sans selection:bg-blue-500/30 selection:text-blue-200 overflow-x-hidden relative">
-      {/* Background glow effects — reduced blur radius for GPU perf */}
-      <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-blue-900/15 rounded-full blur-3xl pointer-events-none -z-10" />
-      <div className="absolute top-[20%] right-1/4 w-[600px] h-[600px] bg-indigo-900/15 rounded-full blur-3xl pointer-events-none -z-10" />
+    <div className="min-h-screen bg-[#030712] text-slate-100 overflow-x-hidden">
 
-      {/* HEADER / NAVBAR */}
-      <header className="sticky top-0 z-50 w-full border-b border-blue-500/10 bg-[#030712]/85 backdrop-blur-md transition-all duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/25">
-              <Bot className="h-6 w-6 text-white" />
+      {/* ── Sticky Navbar ─────────────────────────────────────────────── */}
+      <header className="sticky top-0 z-50 bg-[#030712]/80 backdrop-blur-xl border-b border-white/[0.06]">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="h-8 w-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30">
+              <Bot className="h-4 w-4 text-white" />
             </div>
-            <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 tracking-tight">
+            <span className="text-base font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 tracking-tight">
               CareerPath AI
             </span>
           </div>
 
-          <nav className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-300">
-            <a href="#problem" className="hover:text-blue-400 transition-colors duration-200">Problem</a>
-            <a href="#features" className="hover:text-blue-400 transition-colors duration-200">Features</a>
-            <a href="#how-it-works" className="hover:text-blue-400 transition-colors duration-200">How It Works</a>
-            <a href="#stats" className="hover:text-blue-400 transition-colors duration-200">Stats</a>
+          <nav className="hidden md:flex items-center gap-6 text-sm text-slate-400">
+            <a href="#features" className="hover:text-slate-200 transition-colors">Features</a>
+            <a href="#how-it-works" className="hover:text-slate-200 transition-colors">How It Works</a>
+            <a href="#tech" className="hover:text-slate-200 transition-colors">Stack</a>
           </nav>
 
-          <div className="flex items-center gap-4">
-            <UserButton />
+          <div className="flex items-center gap-3">
+            <Link
+              href="/sign-in"
+              className="hidden sm:block text-sm text-slate-400 hover:text-slate-200 transition-colors font-medium"
+            >
+              Sign in
+            </Link>
+            <Link
+              href="/sign-up"
+              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold transition-all shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 hover:-translate-y-0.5 duration-200"
+            >
+              Get Started
+            </Link>
           </div>
         </div>
       </header>
 
-      {/* HERO SECTION */}
-      <section className="relative pt-12 pb-24 md:pt-20 md:pb-32 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-8 items-center">
-
-          {/* Left Column Text */}
-          <div className="lg:col-span-7 flex flex-col space-y-6 text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-blue-500/20 bg-blue-950/20 text-blue-400 text-xs font-semibold w-fit">
-              <Sparkles className="h-3.5 w-3.5" />
-              <span>Next-Gen AI Recruiting Ecosystem</span>
-            </div>
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight leading-none text-slate-100">
-              Your AI Career Partner — <br className="hidden sm:inline" />
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-500 to-purple-500">
-                From Student to Professional
-              </span>
-            </h1>
-            <p className="text-lg text-slate-400 max-w-2xl leading-relaxed">
-              Upload your resume and let CareerPath AI instantly match you with jobs, identify skill gaps, personalize your study roadmaps, and auto-apply 24/7.
-            </p>
-
-            {/* Client island: auth-aware CTA buttons */}
-            <HeroCTA />
-          </div>
-
-          {/* Right Column Mockup Dashboard */}
-          <div className="lg:col-span-5 relative mt-6 lg:mt-0">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl blur-lg opacity-30" />
-            <div className="relative border border-blue-500/20 rounded-2xl bg-[#090d16]/90 backdrop-blur-sm p-6 shadow-2xl shadow-blue-950/50">
-
-              {/* Mock Dashboard Top Panel */}
-              <div className="flex items-center justify-between border-b border-blue-500/10 pb-4 mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-full bg-red-500" />
-                  <div className="h-3 w-3 rounded-full bg-yellow-500" />
-                  <div className="h-3 w-3 rounded-full bg-green-500" />
-                </div>
-                <div className="text-xs text-slate-400 font-mono bg-blue-950/20 px-2 py-0.5 rounded border border-blue-500/15">
-                  dashboard_mock.dev
-                </div>
-              </div>
-
-              {/* Mock Profile Stats */}
-              <div className="flex gap-4 items-center bg-blue-950/10 border border-blue-500/10 p-3.5 rounded-xl mb-4">
-                <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center font-bold text-white shadow">
-                  A
-                </div>
-                <div className="flex-1 text-left">
-                  <div className="text-sm font-semibold text-slate-200">Alex Mercer</div>
-                  <div className="text-xs text-slate-400">Target: Software Engineer</div>
-                </div>
-                <div className="bg-green-500/15 text-green-400 text-xs px-2.5 py-1 rounded-full font-bold border border-green-500/20">
-                  94% Match Score
-                </div>
-              </div>
-
-              {/* Match Items */}
-              <div className="space-y-3">
-                <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider text-left">Matches &amp; Applications</div>
-
-                <div className="flex items-center justify-between p-3 rounded-lg bg-slate-900/50 border border-slate-800 hover:border-blue-500/30 transition-colors">
-                  <div className="flex items-center gap-3 text-left">
-                    <div className="p-2 rounded bg-blue-950/20 border border-blue-500/20 text-blue-400">
-                      <Briefcase className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <div className="text-xs font-semibold text-slate-200">Junior Fullstack Developer</div>
-                      <div className="text-[10px] text-slate-400">Vercel Inc. • Remote</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-xs font-bold text-blue-400">98% Match</span>
-                    <div className="text-[9px] text-green-400 font-medium">Applied ✓</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between p-3 rounded-lg bg-slate-900/50 border border-slate-800">
-                  <div className="flex items-center gap-3 text-left">
-                    <div className="p-2 rounded bg-indigo-950/20 border border-indigo-500/20 text-indigo-400">
-                      <Briefcase className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <div className="text-xs font-semibold text-slate-200">Software Engineer I</div>
-                      <div className="text-[10px] text-slate-400">Google • Sunnyvale, CA</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-xs font-bold text-indigo-400">92% Match</span>
-                    <div className="text-[9px] text-blue-400 font-medium">Auto-applying...</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Skill Gap Check */}
-              <div className="mt-4 pt-4 border-t border-blue-500/10">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider text-left">Skill Gap Analysis</span>
-                  <span className="text-[10px] text-blue-400 font-semibold bg-blue-950/30 px-2 py-0.5 rounded border border-blue-500/15">3 Gaps Identified</span>
-                </div>
-                <div className="flex flex-wrap gap-1.5 justify-start">
-                  <span className="text-[10px] bg-green-500/10 text-green-400 border border-green-500/20 px-2 py-0.5 rounded-full flex items-center gap-1 font-medium">
-                    <Check className="h-3 w-3" /> React
-                  </span>
-                  <span className="text-[10px] bg-green-500/10 text-green-400 border border-green-500/20 px-2 py-0.5 rounded-full flex items-center gap-1 font-medium">
-                    <Check className="h-3 w-3" /> TypeScript
-                  </span>
-                  <span className="text-[10px] bg-orange-500/10 text-orange-400 border border-orange-500/20 px-2 py-0.5 rounded-full flex items-center gap-1 font-medium">
-                    Missing: Docker
-                  </span>
-                  <span className="text-[10px] bg-orange-500/10 text-orange-400 border border-orange-500/20 px-2 py-0.5 rounded-full flex items-center gap-1 font-medium">
-                    Missing: Postgres
-                  </span>
-                </div>
-              </div>
-
-            </div>
-          </div>
-
+      {/* ── Hero ──────────────────────────────────────────────────────── */}
+      <section className="relative pt-20 pb-28 px-6 overflow-hidden">
+        {/* Background glows */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[500px] bg-blue-600/10 rounded-full blur-3xl" />
+          <div className="absolute top-20 left-1/4 w-[400px] h-[300px] bg-indigo-600/8 rounded-full blur-2xl" />
+          <div className="absolute top-10 right-1/4 w-[300px] h-[200px] bg-purple-600/8 rounded-full blur-2xl" />
         </div>
-      </section>
 
-      {/* PROBLEM SECTION */}
-      <section id="problem" className="py-20 md:py-28 border-t border-blue-500/10 bg-[#010409] relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-xs font-bold text-blue-500 uppercase tracking-wider">The Problem</h2>
-            <p className="mt-2 text-3xl sm:text-4xl font-extrabold text-slate-100">
-              The Problem Fresh Graduates Face
-            </p>
-            <p className="mt-4 text-slate-400 text-lg">
-              Transitioning from classroom to production environments is harder than ever.
-            </p>
+        <div className="relative max-w-5xl mx-auto text-center">
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold mb-8 backdrop-blur-sm">
+            <Sparkles className="w-3 h-3" />
+            Powered by Groq · LLaMA 3.1 · pgvector
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="p-8 rounded-2xl bg-slate-900/30 border border-slate-800/80 hover:border-blue-500/20 transition-colors group hover:-translate-y-1 duration-300">
-              <div className="p-3.5 rounded-xl bg-blue-950/20 border border-blue-500/20 text-blue-400 w-fit mb-6 group-hover:scale-110 transition-transform duration-300">
-                <Clock className="h-6 w-6" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-100 mb-3 text-left">Manual job hunting wastes hours daily</h3>
-              <p className="text-slate-400 text-sm leading-relaxed text-left">
-                Browsing dozens of boards, reading endless job specifications, and manually filling forms drains your energy and wastes hours every single day.
-              </p>
-            </div>
+          {/* Headline */}
+          <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.05] mb-6">
+            Land your{" "}
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400">
+              dream role
+            </span>
+            <br />
+            <span className="text-slate-300">with AI-powered clarity</span>
+          </h1>
 
-            <div className="p-8 rounded-2xl bg-slate-900/30 border border-slate-800/80 hover:border-blue-500/20 transition-colors group hover:-translate-y-1 duration-300">
-              <div className="p-3.5 rounded-xl bg-indigo-950/20 border border-indigo-500/20 text-indigo-400 w-fit mb-6 group-hover:scale-110 transition-transform duration-300">
-                <XCircle className="h-6 w-6" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-100 mb-3 text-left">CVs rejected because they don&apos;t match keywords</h3>
-              <p className="text-slate-400 text-sm leading-relaxed text-left">
-                Applicant Tracking Systems (ATS) automatically filter out standard resumes because they lack the specific semantic keywords matching the job description.
-              </p>
-            </div>
-
-            <div className="p-8 rounded-2xl bg-slate-900/30 border border-slate-800/80 hover:border-blue-500/20 transition-colors group hover:-translate-y-1 duration-300">
-              <div className="p-3.5 rounded-xl bg-purple-950/20 border border-purple-500/20 text-purple-400 w-fit mb-6 group-hover:scale-110 transition-transform duration-300">
-                <Compass className="h-6 w-6" />
-              </div>
-              <h3 className="text-xl font-bold text-slate-100 mb-3 text-left">No clear direction on what skills to learn next</h3>
-              <p className="text-slate-400 text-sm leading-relaxed text-left">
-                Without a feedback loop, you are left in the dark about what programming languages, packages, or systems you need to study to land your first role.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* FEATURES SECTION */}
-      <section id="features" className="py-20 md:py-28 border-t border-blue-500/10 bg-[#030712] relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-xs font-bold text-blue-500 uppercase tracking-wider">Features</h2>
-            <p className="mt-2 text-3xl sm:text-4xl font-extrabold text-slate-100">
-              Everything You Need in One Place
-            </p>
-            <p className="mt-4 text-slate-400 text-lg">
-              Powerful tools designed to guide you step-by-step from registration to your first interview.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div className="p-6 rounded-2xl bg-slate-900/25 border border-slate-800/80 hover:border-blue-500/20 transition-colors hover:bg-slate-900/40">
-              <div className="p-3 rounded-lg bg-blue-950/20 border border-blue-500/20 text-blue-400 w-fit mb-4">
-                <Search className="h-5 w-5" />
-              </div>
-              <h4 className="text-lg font-bold text-slate-200 mb-2 text-left">Semantic AI Job Matching</h4>
-              <p className="text-slate-400 text-sm text-left">
-                Goes beyond basic text searches to analyze the actual semantics of your resume and find matching jobs.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-2xl bg-slate-900/25 border border-slate-800/80 hover:border-blue-500/20 transition-colors hover:bg-slate-900/40">
-              <div className="p-3 rounded-lg bg-indigo-950/20 border border-indigo-500/20 text-indigo-400 w-fit mb-4">
-                <FileText className="h-5 w-5" />
-              </div>
-              <h4 className="text-lg font-bold text-slate-200 mb-2 text-left">AI Resume Builder</h4>
-              <p className="text-slate-400 text-sm text-left">
-                Generates resume descriptions and targets descriptions automatically to align with job descriptions.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-2xl bg-slate-900/25 border border-slate-800/80 hover:border-blue-500/20 transition-colors hover:bg-slate-900/40">
-              <div className="p-3 rounded-lg bg-purple-950/20 border border-purple-500/20 text-purple-400 w-fit mb-4">
-                <Bot className="h-5 w-5" />
-              </div>
-              <h4 className="text-lg font-bold text-slate-200 mb-2 text-left">Skill Gap Analysis</h4>
-              <p className="text-slate-400 text-sm text-left">
-                Finds missing libraries, frameworks, or databases requested in target postings compared to your profile.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-2xl bg-slate-900/25 border border-slate-800/80 hover:border-blue-500/20 transition-colors hover:bg-slate-900/40">
-              <div className="p-3 rounded-lg bg-blue-950/20 border border-blue-500/20 text-blue-400 w-fit mb-4">
-                <CheckCircle className="h-5 w-5" />
-              </div>
-              <h4 className="text-lg font-bold text-slate-200 mb-2 text-left">Personalized Learning Plans</h4>
-              <p className="text-slate-400 text-sm text-left">
-                Recommends customized courses, repos, and documentations to bridge your individual technical gaps.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-2xl bg-slate-900/25 border border-slate-800/80 hover:border-blue-500/20 transition-colors hover:bg-slate-950/25">
-              <div className="p-3 rounded-lg bg-slate-800/20 border border-slate-500/20 text-slate-300 w-fit mb-4">
-                <TrendingUp className="h-5 w-5" />
-              </div>
-              <h4 className="text-lg font-bold text-slate-200 mb-2 text-left">Career Progression Roadmap</h4>
-              <p className="text-slate-400 text-sm text-left">
-                Visually diagrams the progression of mid-level, senior, and architect paths matching your skills.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-2xl bg-slate-900/25 border border-slate-800/80 hover:border-blue-500/20 transition-colors hover:bg-slate-900/40">
-              <div className="p-3 rounded-lg bg-cyan-950/20 border border-cyan-500/20 text-cyan-400 w-fit mb-4">
-                <Zap className="h-5 w-5" />
-              </div>
-              <h4 className="text-lg font-bold text-slate-200 mb-2 text-left">24/7 Auto Apply System</h4>
-              <p className="text-slate-400 text-sm text-left">
-                Keeps scanning jobs and applying to matched ones in the background even while your computer is off.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* HOW IT WORKS SECTION */}
-      <section id="how-it-works" className="py-20 md:py-28 border-t border-blue-500/10 bg-[#010409] relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-xs font-bold text-blue-500 uppercase tracking-wider">How It Works</h2>
-            <p className="mt-2 text-3xl sm:text-4xl font-extrabold text-slate-100">
-              Three Simple Steps to Success
-            </p>
-            <p className="mt-4 text-slate-400 text-lg">
-              Getting started is easy and completely automated.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            <div className="flex flex-col items-center text-center">
-              <div className="h-16 w-16 rounded-2xl bg-blue-950/30 border border-blue-500/20 text-blue-400 flex items-center justify-center font-bold text-xl mb-6 shadow-lg shadow-blue-500/5">
-                <UploadCloud className="h-8 w-8" />
-              </div>
-              <h5 className="text-xl font-bold text-slate-200 mb-2">Step 1: Upload CV &amp; Set Goal</h5>
-              <p className="text-slate-400 text-sm max-w-xs leading-relaxed">
-                Upload your resume and specify your career goals or role preferences.
-              </p>
-            </div>
-
-            <div className="flex flex-col items-center text-center">
-              <div className="h-16 w-16 rounded-2xl bg-indigo-950/30 border border-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-xl mb-6 shadow-lg shadow-indigo-500/5">
-                <Cpu className="h-8 w-8" />
-              </div>
-              <h5 className="text-xl font-bold text-slate-200 mb-2">Step 2: AI Profile Analysis</h5>
-              <p className="text-slate-400 text-sm max-w-xs leading-relaxed">
-                Our model scans public directories and profiles to find matching jobs.
-              </p>
-            </div>
-
-            <div className="flex flex-col items-center text-center">
-              <div className="h-16 w-16 rounded-2xl bg-purple-950/30 border border-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-xl mb-6 shadow-lg shadow-purple-500/5">
-                <CheckCheck className="h-8 w-8" />
-              </div>
-              <h5 className="text-xl font-bold text-slate-200 mb-2">Step 3: Auto-Apply &amp; Track</h5>
-              <p className="text-slate-400 text-sm max-w-xs leading-relaxed">
-                Auto-apply to matches, learn missing skills, and monitor application stages in real-time.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* STATS SECTION */}
-      <section id="stats" className="py-16 md:py-24 border-t border-blue-500/10 bg-[#030712] relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
-            <div className="p-8 rounded-2xl bg-blue-950/5 border border-blue-500/5 shadow-inner">
-              <div className="text-4xl sm:text-5xl font-black text-blue-500 mb-2 flex items-center justify-center gap-1">
-                <Briefcase className="h-8 w-8 text-blue-500 inline" /> 500+
-              </div>
-              <div className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Jobs Matched Daily</div>
-            </div>
-
-            <div className="p-8 rounded-2xl bg-indigo-950/5 border border-indigo-500/5 shadow-inner">
-              <div className="text-4xl sm:text-5xl font-black text-indigo-500 mb-2 flex items-center justify-center gap-1">
-                <Zap className="h-8 w-8 text-indigo-500 inline" /> 10x
-              </div>
-              <div className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Faster Applications</div>
-            </div>
-
-            <div className="p-8 rounded-2xl bg-purple-950/5 border border-purple-500/5 shadow-inner">
-              <div className="text-4xl sm:text-5xl font-black text-purple-500 mb-2 flex items-center justify-center gap-1">
-                <Cpu className="h-8 w-8 text-purple-500 inline" /> AI
-              </div>
-              <div className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Powered Matching</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* FINAL CTA SECTION */}
-      <section className="py-20 md:py-28 border-t border-blue-500/10 bg-gradient-to-b from-[#030712] to-[#0b1329] relative overflow-hidden">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[300px] bg-blue-900/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8 relative z-10 flex flex-col items-center space-y-6">
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-black text-slate-100 tracking-tight">
-            Start Your Career Journey Today
-          </h2>
-          <p className="text-slate-400 text-lg max-w-xl leading-relaxed">
-            Create an account in less than a minute and let CareerPath AI accelerate your path from classroom to professional hire.
+          <p className="text-lg md:text-xl text-slate-400 max-w-2xl mx-auto leading-relaxed mb-10">
+            Parse your CV, match semantically against{" "}
+            <strong className="text-slate-300">thousands of live jobs</strong>, close skill gaps,
+            generate cover letters — all in one workspace. Zero paid APIs required.
           </p>
-          {/* Client island: auth-aware final CTA */}
-          <FinalCTA />
+
+          {/* CTA Buttons */}
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-16">
+            <Link
+              href="/sign-up"
+              className="group flex items-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-base transition-all shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-1 duration-200"
+            >
+              <Sparkles className="w-5 h-5" />
+              Start for free
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </Link>
+            <Link
+              href="/sign-in"
+              className="flex items-center gap-2 px-8 py-4 rounded-2xl border border-slate-700 hover:border-slate-600 text-slate-300 hover:text-white font-semibold text-base transition-all hover:bg-slate-800/50 duration-200"
+            >
+              Sign in
+            </Link>
+          </div>
+
+          {/* Mini feature pills */}
+          <div className="flex flex-wrap justify-center gap-2.5">
+            {[
+              { icon: CheckCircle, text: "No credit card required" },
+              { icon: Zap, text: "Results in under 10s" },
+              { icon: Shield, text: "GDPR data rights built-in" },
+            ].map(({ icon: Icon, text }) => (
+              <div
+                key={text}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-900/60 border border-slate-800 text-slate-400 text-xs font-medium"
+              >
+                <Icon className="w-3.5 h-3.5 text-blue-400" />
+                {text}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Hero visual — Dashboard mockup */}
+        <div className="relative max-w-5xl mx-auto mt-20">
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#030712] z-10 pointer-events-none rounded-3xl" />
+          <div className="relative rounded-3xl border border-white/[0.08] bg-[#070b14]/80 backdrop-blur-sm overflow-hidden shadow-2xl shadow-black/50">
+            {/* Fake browser chrome */}
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06] bg-[#050a12]">
+              <div className="flex gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-red-500/70" />
+                <div className="w-3 h-3 rounded-full bg-amber-500/70" />
+                <div className="w-3 h-3 rounded-full bg-green-500/70" />
+              </div>
+              <div className="flex-1 mx-4">
+                <div className="bg-slate-800/60 rounded-lg px-3 py-1 text-xs text-slate-500 font-mono max-w-sm mx-auto text-center">
+                  careerpath.ai/dashboard
+                </div>
+              </div>
+            </div>
+
+            {/* Dashboard preview content */}
+            <div className="flex h-[340px] overflow-hidden">
+              {/* Sidebar strip */}
+              <div className="w-44 border-r border-white/[0.05] bg-[#070b14] flex flex-col p-3 gap-1 shrink-0">
+                {[
+                  { label: "Overview", active: true, dot: "bg-blue-500" },
+                  { label: "Job Matches", active: false, dot: "bg-emerald-500" },
+                  { label: "Skill Gap", active: false, dot: "bg-indigo-500" },
+                  { label: "Applications", active: false, dot: "bg-amber-500" },
+                  { label: "Cover Letters", active: false, dot: "bg-violet-500" },
+                ].map(item => (
+                  <div
+                    key={item.label}
+                    className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium ${
+                      item.active
+                        ? "bg-blue-600/15 text-blue-400"
+                        : "text-slate-500"
+                    }`}
+                  >
+                    <div className={`w-1.5 h-1.5 rounded-full ${item.dot} opacity-60`} />
+                    {item.label}
+                  </div>
+                ))}
+              </div>
+
+              {/* Main area */}
+              <div className="flex-1 p-5 overflow-hidden">
+                {/* Welcome row */}
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <div className="text-sm font-bold text-slate-200">Welcome back, Alex 👋</div>
+                    <div className="text-[11px] text-slate-500">Your job hunt is ahead of 94% of applicants</div>
+                  </div>
+                  <div className="px-2 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold">
+                    3 new matches
+                  </div>
+                </div>
+
+                {/* Stat cards row */}
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  {[
+                    { label: "Match Score", val: "94%", color: "text-blue-400", bg: "bg-blue-500/8" },
+                    { label: "Jobs Indexed", val: "2,847", color: "text-indigo-400", bg: "bg-indigo-500/8" },
+                    { label: "Skill Gaps", val: "3", color: "text-amber-400", bg: "bg-amber-500/8" },
+                  ].map(c => (
+                    <div key={c.label} className={`p-3 rounded-xl ${c.bg} border border-white/[0.05]`}>
+                      <div className="text-[9px] text-slate-500 font-bold uppercase tracking-wider mb-1">{c.label}</div>
+                      <div className={`text-xl font-black ${c.color}`}>{c.val}</div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Top matches list */}
+                <div className="space-y-2">
+                  {[
+                    { role: "Senior Frontend Engineer", co: "Vercel", pct: "94%", tag: "Remote", tagColor: "text-teal-400 bg-teal-500/10" },
+                    { role: "Staff React Developer", co: "Linear", pct: "88%", tag: "Hybrid", tagColor: "text-indigo-400 bg-indigo-500/10" },
+                    { role: "Full-Stack Engineer", co: "Supabase", pct: "82%", tag: "Remote", tagColor: "text-teal-400 bg-teal-500/10" },
+                  ].map(job => (
+                    <div key={job.role} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-800/30 border border-white/[0.04]">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-6 h-6 rounded-lg bg-blue-900/40 border border-blue-500/20 flex items-center justify-center">
+                          <Briefcase className="w-3 h-3 text-blue-400" />
+                        </div>
+                        <div>
+                          <div className="text-[11px] font-bold text-slate-200">{job.role}</div>
+                          <div className="text-[9px] text-slate-500">{job.co}</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded border ${job.tagColor} border-current/20`}>
+                          {job.tag}
+                        </span>
+                        <span className="text-[11px] font-black text-indigo-400 font-mono">{job.pct}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="border-t border-blue-500/10 bg-[#010307] py-12 relative">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow">
-              <Bot className="h-5 w-5 text-white" />
+      {/* ── Stats Band ────────────────────────────────────────────────── */}
+      <section className="border-y border-white/[0.06] bg-[#070b14]/50">
+        <div className="max-w-5xl mx-auto px-6 py-12 grid grid-cols-1 sm:grid-cols-3 gap-8">
+          {STATS.map(stat => (
+            <div key={stat.unit} className="text-center">
+              <div className={`text-5xl font-black ${stat.color} mb-1 tracking-tight`}>{stat.value}</div>
+              <div className="text-slate-200 font-bold text-sm mb-1">{stat.unit}</div>
+              <div className="text-slate-500 text-xs">{stat.sub}</div>
             </div>
-            <span className="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 tracking-tight">
+          ))}
+        </div>
+      </section>
+
+      {/* ── Problem section ───────────────────────────────────────────── */}
+      <section className="py-24 px-6">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-16">
+            <p className="text-xs font-bold uppercase tracking-widest text-blue-400 mb-3">The problem</p>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-100 mb-4">
+              Job hunting is broken
+            </h2>
+            <p className="text-slate-400 text-base max-w-xl mx-auto">
+              Candidates waste hours on mismatched applications, keyword-stuffed resumes, and scattered spreadsheets.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-5">
+            {[
+              {
+                icon: "😤",
+                title: "Keyword roulette",
+                desc: "ATS filters reject 75% of applications before a human ever reads them. Guessing which keywords matter is a full-time job.",
+                highlight: "75% rejection rate",
+              },
+              {
+                icon: "⏰",
+                title: "Skill blindspots",
+                desc: "Most candidates don't know which skills are blocking them. Without a gap analysis, every application is a shot in the dark.",
+                highlight: "No targeted learning",
+              },
+              {
+                icon: "📋",
+                title: "Scattered tracking",
+                desc: "Applied via 6 platforms, follow-up emails in Gmail, status in a spreadsheet. Nothing is connected, nothing is automated.",
+                highlight: "Zero visibility",
+              },
+            ].map(card => (
+              <div
+                key={card.title}
+                className="p-6 rounded-2xl bg-slate-900/40 border border-slate-800/80 hover:border-slate-700 transition-colors group"
+              >
+                <div className="text-3xl mb-4">{card.icon}</div>
+                <div className="inline-block text-[10px] font-bold text-red-400 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-full mb-3">
+                  {card.highlight}
+                </div>
+                <h3 className="text-base font-bold text-slate-100 mb-2">{card.title}</h3>
+                <p className="text-sm text-slate-400 leading-relaxed">{card.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Features Grid ─────────────────────────────────────────────── */}
+      <section id="features" className="py-24 px-6 bg-gradient-to-b from-transparent via-blue-950/5 to-transparent">
+        <div className="max-w-5xl mx-auto">
+          <div className="text-center mb-16">
+            <p className="text-xs font-bold uppercase tracking-widest text-blue-400 mb-3">Features</p>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-100 mb-4">
+              Everything you need to land the job
+            </h2>
+            <p className="text-slate-400 text-base max-w-xl mx-auto">
+              A unified AI workspace that handles every step — from parsing your CV to tracking your offer.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {FEATURES.map(f => (
+              <div
+                key={f.title}
+                className="group relative p-6 rounded-2xl bg-slate-900/40 border border-slate-800/80 hover:border-slate-600 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-black/30 overflow-hidden"
+              >
+                {/* Subtle glow on hover */}
+                <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-gradient-to-br ${f.color} opacity-[0.03] rounded-2xl`} />
+
+                <div className={`relative w-10 h-10 rounded-xl bg-gradient-to-br ${f.color} shadow-lg ${f.glow} flex items-center justify-center mb-4`}>
+                  <f.icon className="w-5 h-5 text-white" />
+                </div>
+
+                <div className="flex items-center gap-2 mb-2">
+                  <h3 className="text-sm font-bold text-slate-100">{f.title}</h3>
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-slate-700">
+                    {f.badge}
+                  </span>
+                </div>
+                <p className="text-xs text-slate-400 leading-relaxed">{f.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── How It Works ──────────────────────────────────────────────── */}
+      <section id="how-it-works" className="py-24 px-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-16">
+            <p className="text-xs font-bold uppercase tracking-widest text-blue-400 mb-3">Process</p>
+            <h2 className="text-3xl md:text-4xl font-extrabold text-slate-100 mb-4">
+              From CV to offer in 3 steps
+            </h2>
+            <p className="text-slate-400 text-base max-w-xl mx-auto">
+              No complex setup. Just upload, match, and apply — our AI does the heavy lifting.
+            </p>
+          </div>
+
+          <div className="space-y-5">
+            {STEPS.map((step, i) => (
+              <div key={step.num} className="group flex gap-6 p-6 rounded-2xl bg-slate-900/40 border border-slate-800/80 hover:border-slate-700 transition-all">
+                <div className={`shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br ${step.color} flex items-center justify-center font-black text-white text-sm shadow-lg`}>
+                  {step.num}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-3 mb-2">
+                    <h3 className="text-base font-bold text-slate-100">{step.title}</h3>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700">
+                      {step.pill}
+                    </span>
+                  </div>
+                  <p className="text-sm text-slate-400 leading-relaxed">{step.desc}</p>
+                </div>
+                {i < STEPS.length - 1 && (
+                  <ChevronRight className="shrink-0 self-center w-4 h-4 text-slate-700 group-hover:text-slate-500 transition-colors hidden sm:block" />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Tech Stack ────────────────────────────────────────────────── */}
+      <section id="tech" className="py-20 px-6 border-y border-white/[0.06] bg-[#070b14]/30">
+        <div className="max-w-4xl mx-auto text-center">
+          <p className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-3 flex items-center justify-center gap-2">
+            <Layers className="w-3.5 h-3.5" /> Technology Stack
+          </p>
+          <h2 className="text-2xl font-extrabold text-slate-200 mb-3">
+            Built on proven open infrastructure
+          </h2>
+          <p className="text-slate-400 text-sm mb-8 max-w-xl mx-auto">
+            Every component is production-grade and zero-cost to operate. No vendor lock-in, no hidden fees.
+          </p>
+          <div className="flex flex-wrap justify-center gap-2.5">
+            {TECH_PILLS.map(t => (
+              <span
+                key={t}
+                className="px-3 py-1.5 rounded-full bg-slate-900/60 border border-slate-800 text-slate-400 text-xs font-semibold hover:border-slate-600 hover:text-slate-300 transition-colors"
+              >
+                {t}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Social Proof / Testimonial strip ─────────────────────────── */}
+      <section className="py-20 px-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="grid sm:grid-cols-3 gap-5">
+            {[
+              {
+                quote: "The semantic matching is genuinely impressive. It found roles I would never have searched for but were perfect fits.",
+                name: "Senior Engineer",
+                sub: "Placed at a Series-B startup",
+                stars: 5,
+              },
+              {
+                quote: "Skill gap analysis told me exactly what to learn. Three weeks later I had the certifications and landed the interview.",
+                name: "Career Switcher",
+                sub: "Data → ML Engineering",
+                stars: 5,
+              },
+              {
+                quote: "The Greenhouse + Lever feed surfaces roles that never appear on generic boards. Huge competitive advantage.",
+                name: "Product Manager",
+                sub: "FAANG-adjacent role",
+                stars: 5,
+              },
+            ].map(t => (
+              <div key={t.name} className="p-5 rounded-2xl bg-slate-900/40 border border-slate-800/80 space-y-4">
+                <div className="flex gap-0.5">
+                  {Array.from({ length: t.stars }).map((_, i) => (
+                    <Star key={i} className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
+                  ))}
+                </div>
+                <p className="text-xs text-slate-300 leading-relaxed italic">&ldquo;{t.quote}&rdquo;</p>
+                <div>
+                  <div className="text-xs font-bold text-slate-200">{t.name}</div>
+                  <div className="text-[10px] text-slate-500">{t.sub}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Final CTA ─────────────────────────────────────────────────── */}
+      <section className="py-24 px-6">
+        <div className="max-w-3xl mx-auto text-center">
+          <div className="relative p-12 rounded-3xl bg-gradient-to-br from-blue-950/60 to-indigo-950/60 border border-blue-500/20 overflow-hidden">
+            {/* Glows */}
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-48 bg-blue-500/15 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-0 right-1/4 w-48 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none" />
+
+            <div className="relative">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center mx-auto mb-6 shadow-xl shadow-blue-500/30">
+                <Bot className="w-7 h-7 text-white" />
+              </div>
+              <h2 className="text-3xl md:text-4xl font-extrabold text-slate-100 mb-4">
+                Your next role is waiting
+              </h2>
+              <p className="text-slate-400 text-base mb-8 max-w-lg mx-auto">
+                Join the AI-powered job hunt. Upload your CV and get semantic matches in under a minute — completely free.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <Link
+                  href="/sign-up"
+                  className="group flex items-center justify-center gap-2 px-8 py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-base transition-all shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50 hover:-translate-y-1 duration-200"
+                >
+                  <Sparkles className="w-5 h-5" />
+                  Get started free
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </Link>
+              </div>
+              <p className="text-xs text-slate-500 mt-4 flex items-center justify-center gap-4">
+                <span className="flex items-center gap-1"><CheckCircle className="w-3 h-3 text-green-500" /> No credit card</span>
+                <span className="flex items-center gap-1"><Shield className="w-3 h-3 text-blue-400" /> GDPR compliant</span>
+                <span className="flex items-center gap-1"><Database className="w-3 h-3 text-indigo-400" /> Data is yours</span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Footer ────────────────────────────────────────────────────── */}
+      <footer className="border-t border-white/[0.06] py-10 px-6 bg-[#070b14]/50">
+        <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-2.5">
+            <div className="h-7 w-7 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-sm shadow-blue-500/30">
+              <Bot className="h-3.5 w-3.5 text-white" />
+            </div>
+            <span className="text-sm font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400">
               CareerPath AI
+            </span>
+            <span className="text-slate-600 text-xs font-mono">v2.1</span>
+          </div>
+
+          <div className="flex items-center gap-6 text-xs text-slate-500">
+            <span className="flex items-center gap-1.5">
+              <Users className="w-3.5 h-3.5" />
+              Zero-Cost Edition
+            </span>
+            <span className="flex items-center gap-1.5">
+              <Shield className="w-3.5 h-3.5" />
+              GDPR Art. 15/17/20
+            </span>
+            <span className="flex items-center gap-1.5">
+              <BrainCircuit className="w-3.5 h-3.5" />
+              Groq · pgvector
             </span>
           </div>
 
-          <p className="text-slate-500 text-xs md:order-last">
-            &copy; 2026 CareerPath AI. All rights reserved.
-          </p>
-
-          <div className="flex gap-8 text-xs font-medium text-slate-400">
-            <a href="#" className="hover:text-blue-400 transition-colors">Home</a>
-            <a href="#features" className="hover:text-blue-400 transition-colors">Features</a>
-            {/* Client island: auth-aware footer links */}
-            <FooterAuthLinks />
+          <div className="text-xs text-slate-600">
+            &copy; {new Date().getFullYear()} CareerPath AI. All rights reserved.
           </div>
         </div>
       </footer>
+
     </div>
   );
 }

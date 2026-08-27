@@ -49,13 +49,18 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-function StatCard({ label, value, color }: { label: string; value: number | string; color: string }) {
+function StatCard({ label, value, color, icon: Icon }: { label: string; value: number | string; color: string; icon?: React.ComponentType<{className?: string}> }) {
   return (
-    <div className="p-4 bg-slate-900/30 border border-slate-800/80 rounded-xl flex items-center justify-between">
+    <div className="p-4 bg-slate-900/30 border border-slate-800/80 rounded-xl flex items-center justify-between hover:border-slate-700 transition-colors">
       <div>
         <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">{label}</span>
         <span className={`text-2xl font-black ${color}`}>{value}</span>
       </div>
+      {Icon && (
+        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${color} bg-current/10 opacity-60`}>
+          <Icon className="w-4 h-4" />
+        </div>
+      )}
     </div>
   );
 }
@@ -151,10 +156,10 @@ export default function ApplicationsView() {
       {/* Stats Row */}
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <StatCard label="Total Saved" value={stats.total_saved} color="text-slate-200" />
-          <StatCard label="Applied Today" value={stats.today_applied} color="text-blue-400" />
-          <StatCard label="Daily Limit" value={stats.daily_limit} color="text-amber-400" />
-          <StatCard label="Remaining" value={stats.remaining_today} color="text-emerald-400" />
+          <StatCard label="Total Saved" value={stats.total_saved} color="text-slate-200" icon={Briefcase} />
+          <StatCard label="Applied Today" value={stats.today_applied} color="text-blue-400" icon={Send} />
+          <StatCard label="Daily Limit" value={stats.daily_limit} color="text-amber-400" icon={Clock} />
+          <StatCard label="Remaining Today" value={stats.remaining_today} color="text-emerald-400" icon={Trophy} />
         </div>
       )}
 
@@ -188,11 +193,13 @@ export default function ApplicationsView() {
       )}
 
       {applications.length === 0 ? (
-        <div className="p-12 text-center bg-slate-900/30 border border-slate-800/80 rounded-2xl space-y-3">
-          <Send className="w-10 h-10 text-slate-600 mx-auto" />
-          <div className="text-sm font-bold text-slate-300">No applications yet</div>
-          <p className="text-xs text-slate-500">
-            Save jobs and use the Apply button in the Job Matches page to start tracking.
+        <div className="p-16 text-center bg-slate-900/30 border border-slate-800/80 rounded-2xl space-y-3">
+          <div className="w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mx-auto">
+            <Send className="w-8 h-8 text-blue-400" />
+          </div>
+          <div className="text-sm font-bold text-slate-200">No applications yet</div>
+          <p className="text-xs text-slate-500 max-w-xs mx-auto">
+            Save jobs in Job Matches and click Apply to start tracking your pipeline here.
           </p>
         </div>
       ) : viewMode === "kanban" ? (
@@ -204,10 +211,10 @@ export default function ApplicationsView() {
               const cfg = STATUS_CONFIG[col];
               return (
                 <div key={col} className="w-72 flex-shrink-0">
-                  <div className={`flex items-center gap-2 mb-3 px-3 py-2 rounded-xl ${cfg.bg} border`}>
+                  <div className={`flex items-center gap-2 mb-3 px-3 py-2.5 rounded-xl ${cfg.bg} border`}>
                     {cfg.icon}
                     <span className={`text-xs font-bold ${cfg.color}`}>{cfg.label}</span>
-                    <span className="ml-auto text-[10px] font-mono text-slate-400">{colApps.length}</span>
+                    <span className={`ml-auto text-[11px] font-black px-1.5 py-0.5 rounded-full ${cfg.bg} ${cfg.color}`}>{colApps.length}</span>
                   </div>
                   <div className="space-y-3">
                     {colApps.length === 0 ? (
