@@ -15,6 +15,8 @@ import {
   LogOut,
   Loader2,
   Menu,
+  Send,
+  Settings,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -23,8 +25,10 @@ const navItems = [
   { href: "/dashboard/cv", label: "Upload CV", icon: FileText },
   { href: "/dashboard/jobs", label: "Job Matches", icon: Briefcase },
   { href: "/dashboard/saved", label: "Saved Jobs", icon: Bookmark },
+  { href: "/dashboard/applications", label: "Applications", icon: Send },
   { href: "/dashboard/skills", label: "Skill Gap", icon: TrendingUp },
   { href: "/dashboard/cover-letters", label: "Cover Letters", icon: Mail },
+  { href: "/dashboard/admin", label: "Job Sources", icon: Settings },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
