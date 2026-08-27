@@ -220,15 +220,133 @@ export async function getResumeReview(cvId: string): Promise<ResumeReviewRespons
 
 // ── Jobs ───────────────────────────────────────────────────────────────────
 
-/** Fetch jobs from Adzuna (with DB caching). */
+/** Fetch jobs from multi-source connector (Arbeitnow, Jobicy, optionally Adzuna). */
 export async function findJobs(
   query: string,
   location: string = "us",
-  results: number = 10
+  results: number = 20,
+  source?: string,
+  remoteOnly?: boolean,
 ): Promise<JobsResponse> {
   const params = new URLSearchParams({ query, location, results: String(results) });
+  if (source) params.set("source", source);
+  if (remoteOnly) params.set("remote_only", "true");
   const res = await fetch(`${BASE_URL}/jobs/find?${params}`);
   return handleResponse<JobsResponse>(res);
+}
+
+// ── Job Sources ──────────────────────────────────────────────────────────
+
+export interface JobSourceHealth {
+  source: string;
+  status: "ok" | "error" | "not_configured";
+  http_code?: number;
+  detail?: string;
+}
+
+export interface JobSource {
+  id: string;
+  name: string;
+  type: "public_api" | "api_key";
+  requires_key: boolean;
+  configured?: boolean;
+  description: string;
+  url: string;
+  health: JobSourceHealth;
+}
+
+export interface JobSourcesResponse {
+  status: string;
+  sources: JobSource[];
+}
+
+/** List all job sources and their health status. */
+export async function getJobSources(): Promise<JobSourcesResponse> {
+  const res = await fetch(`${BASE_URL}/jobs/sources`, {
+    headers: await getAuthHeaders(),
+  });
+  return handleResponse<JobSourcesResponse>(res);
+}
+
+/** Trigger an admin sync of all enabled job sources. */
+export async function triggerJobSync(pages: number = 3): Promise<{ status: string; message: string }> {
+  const params = new URLSearchParams({ pages: String(pages) });
+  const res = await fetch(`${BASE_URL}/jobs/admin/sync?${params}`, {
+    method: "POST",
+    headers: await getAuthHeaders(),
+  });
+  return handleResponse(res);
+}
+
+/** Import jobs from a CSV or JSON file. */
+export async function importJobsFile(file: File): Promise<{
+  status: string;
+  parsed: number;
+  valid: number;
+  saved: number;
+}> {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${BASE_URL}/jobs/admin/import`, {
+    method: "POST",
+    headers: await getAuthHeaders(),
+    body: form,
+  });
+  return handleResponse(res);
+}
+
+// ── Application Assistant ─────────────────────────────────────────────────
+
+export interface ApplyRequest {
+  job_id: string;
+  consent: boolean;
+  notes?: string;
+  cover_letter_id?: string;
+}
+
+export interface ApplicationStats {
+  status: string;
+  total_saved: number;
+  by_status: Record<string, number>;
+  today_applied: number;
+  daily_limit: number;
+  remaining_today: number;
+}
+
+/** Submit an apply-intent for a job (requires explicit consent). */
+export async function applyToJob(req: ApplyRequest): Promise<{ status: string; message: string; application_id?: string }> {
+  const res = await fetch(`${BASE_URL}/api/v1/applications/apply`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...(await getAuthHeaders()) },
+    body: JSON.stringify(req),
+  });
+  return handleResponse(res);
+}
+
+/** List all applications for the signed-in user. */
+export async function getApplications(statusFilter?: string): Promise<{ status: string; data: SavedJobEntry[] }> {
+  const params = statusFilter ? new URLSearchParams({ status_filter: statusFilter }) : new URLSearchParams();
+  const res = await fetch(`${BASE_URL}/api/v1/applications/?${params}`, {
+    headers: await getAuthHeaders(),
+  });
+  return handleResponse(res);
+}
+
+/** Get application statistics for the signed-in user. */
+export async function getApplicationStats(): Promise<ApplicationStats> {
+  const res = await fetch(`${BASE_URL}/api/v1/applications/stats`, {
+    headers: await getAuthHeaders(),
+  });
+  return handleResponse<ApplicationStats>(res);
+}
+
+/** Get the audit log for the signed-in user. */
+export async function getAuditLog(limit: number = 50): Promise<{ status: string; data: Record<string, unknown>[] }> {
+  const params = new URLSearchParams({ limit: String(limit) });
+  const res = await fetch(`${BASE_URL}/api/v1/applications/audit-log?${params}`, {
+    headers: await getAuthHeaders(),
+  });
+  return handleResponse(res);
 }
 
 /** Semantic job matching using a stored CV embedding. */

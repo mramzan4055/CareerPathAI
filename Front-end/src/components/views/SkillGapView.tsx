@@ -434,37 +434,56 @@ export default function SkillsPage() {
       {/* Bento Stats row */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
-        <div className="p-5 bg-slate-900/30 border border-slate-800/80 rounded-2xl flex justify-between items-center transition-all hover:bg-slate-800/40">
+        <div className={`p-5 rounded-2xl flex justify-between items-center transition-all hover:border-slate-700 cursor-default border ${
+          criticalGapsCount > 0 ? "bg-red-950/20 border-red-500/20" : "bg-slate-900/30 border-slate-800/80"
+        }`}>
           <div>
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Critical Skill Gaps</span>
-            <span className="text-3xl font-black text-red-400">{criticalGapsCount}</span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Critical Gaps</span>
+            <span className={`text-3xl font-black ${
+              criticalGapsCount > 0 ? "text-red-400" : "text-emerald-400"
+            }`}>{criticalGapsCount}</span>
             <p className="text-[10px] text-slate-400 mt-1 font-medium truncate max-w-[150px]">
               {highGaps.map(g => g.skill).join(', ') || (analysisDone ? 'None — great fit!' : '—')}
             </p>
           </div>
-          <div className="h-10 w-10 rounded-xl bg-red-500/10 flex items-center justify-center text-red-400 border border-red-500/20 shrink-0">
+          <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 border ${
+            criticalGapsCount > 0
+              ? "bg-red-500/10 text-red-400 border-red-500/20"
+              : "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+          }`}>
             <AlertTriangle className="w-5 h-5" />
           </div>
         </div>
 
-        <div className="p-5 bg-slate-900/30 border border-slate-800/80 rounded-2xl flex justify-between items-center transition-all hover:bg-slate-800/40">
+        <div className="p-5 bg-slate-900/30 border border-slate-800/80 rounded-2xl flex justify-between items-center transition-all hover:border-slate-700">
           <div>
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Core Readiness</span>
-            <span className="text-3xl font-black text-blue-400">{loadingAnalysis ? '—' : `${readinessScore}%`}</span>
+            <span className="text-3xl font-black text-blue-400">{loadingAnalysis ? '…' : `${readinessScore}%`}</span>
             <p className="text-[10px] text-slate-400 mt-1 font-medium">
-              {selectedJob && selectedJob.match_percentage > 0 ? 'Vector similarity score' : 'Estimated from skill gaps'}
+              {selectedJob && selectedJob.match_percentage > 0 ? 'Vector similarity' : 'Gap-derived estimate'}
             </p>
           </div>
-          <div className="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400 border border-blue-500/20 shrink-0">
-            <Target className="w-5 h-5" />
+          {/* Mini ring */}
+          <div className="relative w-12 h-12 shrink-0">
+            <svg className="w-full h-full transform -rotate-90">
+              <circle cx="24" cy="24" r="18" stroke="#1e293b" strokeWidth="4" fill="none" />
+              <circle cx="24" cy="24" r="18" stroke="#3b82f6" strokeWidth="4" fill="none"
+                strokeDasharray="113"
+                strokeDashoffset={loadingAnalysis ? 113 : 113 - (113 * readinessScore) / 100}
+                className="transition-all duration-1000"
+              />
+            </svg>
+            <div className="absolute inset-0 flex items-center justify-center text-[9px] font-black text-blue-400">
+              {loadingAnalysis ? "…" : `${readinessScore}%`}
+            </div>
           </div>
         </div>
 
-        <div className="p-5 bg-slate-900/30 border border-slate-800/80 rounded-2xl flex justify-between items-center transition-all hover:bg-slate-800/40">
+        <div className="p-5 bg-slate-900/30 border border-slate-800/80 rounded-2xl flex justify-between items-center transition-all hover:border-slate-700">
           <div>
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Roadmap Sprint</span>
-            <span className="text-3xl font-black text-indigo-400">{estimatedWeeks > 0 ? `${estimatedWeeks} Wks` : (analysisDone ? 'Ready' : '—')}</span>
-            <p className="text-[10px] text-slate-400 mt-1 font-medium">Estimated time to close gaps</p>
+            <span className="text-3xl font-black text-indigo-400">{estimatedWeeks > 0 ? `${estimatedWeeks}w` : (analysisDone ? 'Ready!' : '—')}</span>
+            <p className="text-[10px] text-slate-400 mt-1 font-medium">Est. weeks to close gaps</p>
           </div>
           <div className="h-10 w-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20 shrink-0">
             <GraduationCap className="w-5 h-5" />

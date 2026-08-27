@@ -184,13 +184,20 @@ export default function CoverLettersView() {
     <div className="space-y-6 max-w-[1200px] animate-in fade-in duration-500">
 
       {/* Header */}
-      <div className="p-5 bg-slate-900/30 border border-slate-800/80 rounded-2xl">
-        <h1 className="text-xl font-extrabold text-slate-100 flex items-center gap-2">
-          <Mail className="w-5 h-5 text-blue-400" /> AI Cover Letter Generator
-        </h1>
-        <p className="text-xs text-slate-400 mt-1">
-          Generates a personalized cover letter from your parsed CV and a job description, using the same AI as your skill-gap analysis.
-        </p>
+      <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-extrabold text-slate-100 flex items-center gap-2">
+            <Mail className="h-6 w-6 text-blue-400" /> AI Cover Letter Generator
+          </h1>
+          <p className="text-slate-400 text-sm mt-1">
+            Personalized cover letters from your parsed CV — pick a job match or paste a description.
+          </p>
+        </div>
+        {savedLetters.length > 0 && (
+          <span className="shrink-0 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold">
+            {savedLetters.length} saved letter{savedLetters.length !== 1 ? "s" : ""}
+          </span>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -270,30 +277,44 @@ export default function CoverLettersView() {
 
         {/* Right: Generated content + saved letters */}
         <div className="col-span-12 lg:col-span-7 space-y-4">
-          <div className="p-5 bg-slate-900/30 border border-slate-800/80 rounded-2xl min-h-[200px]">
-            <div className="flex items-center justify-between mb-3">
+          <div className="p-5 bg-slate-900/30 border border-slate-800/80 rounded-2xl min-h-[240px] flex flex-col">
+            <div className="flex items-center justify-between mb-4">
               <h3 className="text-sm font-bold text-slate-100 flex items-center gap-2">
                 <FileText className="w-4 h-4 text-blue-400" /> Generated Letter
               </h3>
               {generatedContent && (
                 <button
                   onClick={() => handleCopy(generatedContent)}
-                  className="flex items-center gap-1 text-[10px] text-blue-400 hover:text-blue-300 font-bold"
+                  className="flex items-center gap-1.5 text-[11px] text-blue-400 hover:text-blue-300 font-bold px-2.5 py-1 rounded-lg hover:bg-blue-500/10 transition-colors"
                 >
-                  <Copy className="w-3 h-3" /> Copy
+                  <Copy className="w-3 h-3" /> Copy to clipboard
                 </button>
               )}
             </div>
-            {generating ? (
-              <div className="flex flex-col items-center justify-center py-12 gap-3 text-center">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-                <p className="text-xs text-slate-400">Writing your personalized cover letter…</p>
-              </div>
-            ) : generatedContent ? (
-              <div className="text-xs text-slate-300 leading-relaxed whitespace-pre-line">{generatedContent}</div>
-            ) : (
-              <p className="text-xs text-slate-500 text-center py-12">Fill in the form and click &quot;Generate Cover Letter&quot; to get started.</p>
-            )}
+            <div className="flex-1">
+              {generating ? (
+                <div className="flex flex-col items-center justify-center py-16 gap-4 text-center">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-300">Writing your cover letter…</p>
+                    <p className="text-xs text-slate-500 mt-1">Powered by Groq LLaMA 3.1</p>
+                  </div>
+                </div>
+              ) : generatedContent ? (
+                <div className="text-xs text-slate-300 leading-relaxed whitespace-pre-line bg-slate-900/40 border border-slate-800/50 rounded-xl p-4 max-h-80 overflow-y-auto custom-scrollbar">
+                  {generatedContent}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 text-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-slate-800/60 border border-slate-700 flex items-center justify-center">
+                    <Mail className="w-6 h-6 text-slate-500" />
+                  </div>
+                  <p className="text-xs text-slate-500 max-w-xs">Configure your target job and tone, then click &ldquo;Generate Cover Letter&rdquo; to get started.</p>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Saved letters list */}

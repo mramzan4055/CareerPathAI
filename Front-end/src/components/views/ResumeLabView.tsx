@@ -11,7 +11,8 @@ import {
   AlertCircle,
   FileText,
   Loader2,
-  Printer
+  Printer,
+  Download,
 } from "lucide-react";
 
 const priorityStyles: Record<string, string> = {
@@ -205,6 +206,18 @@ export default function ResumeLabPage() {
           >
             <Printer className="w-3.5 h-3.5" /> Print
           </button>
+
+          {cvId && (
+            <a
+              href={`${process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000"}/cv/${cvId}/export-pdf`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 rounded-lg border border-blue-700/40 bg-blue-900/20 hover:bg-blue-900/40 text-xs text-blue-300 flex items-center gap-1.5 font-bold cursor-pointer transition-colors"
+              title="Download PDF Resume"
+            >
+              <Download className="w-3.5 h-3.5" /> Export PDF
+            </a>
+          )}
 
           <button
             onClick={handleResetLab}
