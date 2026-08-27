@@ -3,9 +3,11 @@ Unified multi-source job fetcher.
 
 Priority order (zero-cost, no scraping):
   1. Database cache (< 6 hours old)
-  2. Arbeitnow public API  (no key)
-  3. Jobicy public API     (no key)
-  4. Adzuna API            (key optional — skipped when not configured)
+  2. Arbeitnow public API   (no key)
+  3. Jobicy public API      (no key)
+  4. Greenhouse ATS boards  (no key — public board feeds)
+  5. Lever ATS postings     (no key — public postings API)
+  6. Adzuna API             (key optional — skipped when not configured)
 
 Each source returns jobs in the canonical schema used by the DB / UI.
 """
@@ -18,16 +20,21 @@ from typing import Optional
 from database import get_supabase
 from services.arbeitnow import run_full_sync as arbeitnow_sync
 from services.jobicy import run_full_sync as jobicy_sync
+from services.greenhouse import run_full_sync as greenhouse_sync
+from services.lever import run_full_sync as lever_sync
 
 logger = logging.getLogger(__name__)
 
 CACHE_TTL_HOURS = 6  # how old DB records can be before we re-fetch
 
+# All known source names — used by health-check / admin routes
+ALL_SOURCE_NAMES = ["arbeitnow", "jobicy", "greenhouse", "lever", "adzuna"]
+
 
 # ── helpers ────────────────────────────────────────────────────────────────
 
 def _as_ui_job(row: dict) -> dict:
-    """Reshape a DB row into the shape the UI/API expects."""
+    """Reshape a DB row or normalised dict into the shape the UI/API expects."""
     return {
         "id": row.get("id"),
         "job_title": row.get("job_title", ""),
@@ -93,7 +100,7 @@ async def get_jobs_multi_source(
     query: str = "software engineer",
     location: str = "us",
     results: int = 20,
-    source_filter: Optional[str] = None,   # "arbeitnow" | "jobicy" | "adzuna" | None
+    source_filter: Optional[str] = None,   # "arbeitnow"|"jobicy"|"greenhouse"|"lever"|"adzuna"|None
     remote_only: bool = False,
 ) -> dict:
     """
@@ -158,6 +165,26 @@ async def get_jobs_multi_source(
         except Exception as exc:
             logger.warning("Jobicy fetch error: %s", exc)
 
+    if source_filter in (None, "greenhouse"):
+        try:
+            gh_result = await greenhouse_sync(max_per_board=20)
+            # greenhouse run_full_sync doesn't return "jobs" list — call sync directly
+            from services.greenhouse import sync as gh_sync, normalize as gh_norm, validate as gh_val
+            gh_jobs = await gh_sync(max_per_board=20)
+            all_jobs.extend(gh_jobs)
+            logger.info("Greenhouse contributed %d jobs", len(gh_jobs))
+        except Exception as exc:
+            logger.warning("Greenhouse fetch error: %s", exc)
+
+    if source_filter in (None, "lever"):
+        try:
+            from services.lever import sync as lv_sync
+            lv_jobs = await lv_sync(max_per_company=20)
+            all_jobs.extend(lv_jobs)
+            logger.info("Lever contributed %d jobs", len(lv_jobs))
+        except Exception as exc:
+            logger.warning("Lever fetch error: %s", exc)
+
     # ── 3. Optional Adzuna (key-gated) ────────────────────────────────────
     if source_filter in (None, "adzuna"):
         try:
@@ -202,12 +229,15 @@ async def get_jobs_multi_source(
     # Simple keyword match
     if query and query.lower() not in ("software engineer", "any", ""):
         q_lower = query.lower()
-        all_jobs = [
-            j for j in all_jobs
-            if q_lower in j.get("job_title", "").lower()
-            or q_lower in j.get("clean_description", "").lower()
-            or any(q_lower in t.lower() for t in j.get("tags", []))
-        ] or all_jobs  # fall back to unfiltered if nothing matches
+        all_jobs = (
+            [
+                j for j in all_jobs
+                if q_lower in j.get("job_title", "").lower()
+                or q_lower in j.get("clean_description", "").lower()
+                or any(q_lower in t.lower() for t in j.get("tags", []))
+            ]
+            or all_jobs  # fall back to unfiltered if nothing matches
+        )
 
     limited = all_jobs[:results]
 
@@ -228,28 +258,55 @@ async def get_jobs_multi_source(
 
 
 async def sync_all_sources(pages: int = 3) -> dict:
-    """Admin-triggered full sync of all enabled zero-cost sources."""
-    results = {}
+    """
+    Admin-triggered full sync of ALL enabled zero-cost sources.
+    Returns a per-source summary for the admin dashboard.
+    """
+    results: dict = {}
+    supabase = get_supabase()
 
+    # Arbeitnow
     try:
         ar = await arbeitnow_sync(pages=pages)
         results["arbeitnow"] = {"fetched": ar["fetched"], "valid": ar["valid"]}
-        supabase = get_supabase()
         if supabase and ar["jobs"]:
             saved = _upsert_jobs_to_db(ar["jobs"], supabase)
             results["arbeitnow"]["saved"] = saved
     except Exception as exc:
         results["arbeitnow"] = {"error": str(exc)}
 
+    # Jobicy
     try:
         jc = await jobicy_sync(count=50)
         results["jobicy"] = {"fetched": jc["fetched"], "valid": jc["valid"]}
-        supabase = get_supabase()
         if supabase and jc["jobs"]:
             saved = _upsert_jobs_to_db(jc["jobs"], supabase)
             results["jobicy"]["saved"] = saved
     except Exception as exc:
         results["jobicy"] = {"error": str(exc)}
+
+    # Greenhouse
+    try:
+        from services.greenhouse import sync as gh_sync
+        gh_jobs = await gh_sync(max_per_board=pages * 10)
+        valid_gh = [j for j in gh_jobs]  # already validated inside sync()
+        results["greenhouse"] = {"fetched": len(gh_jobs), "valid": len(valid_gh)}
+        if supabase and valid_gh:
+            saved = _upsert_jobs_to_db(valid_gh, supabase)
+            results["greenhouse"]["saved"] = saved
+    except Exception as exc:
+        results["greenhouse"] = {"error": str(exc)}
+
+    # Lever
+    try:
+        from services.lever import sync as lv_sync
+        lv_jobs = await lv_sync(max_per_company=pages * 10)
+        results["lever"] = {"fetched": len(lv_jobs), "valid": len(lv_jobs)}
+        if supabase and lv_jobs:
+            saved = _upsert_jobs_to_db(lv_jobs, supabase)
+            results["lever"]["saved"] = saved
+    except Exception as exc:
+        results["lever"] = {"error": str(exc)}
 
     return {
         "status": "complete",

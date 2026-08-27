@@ -30,4 +30,4 @@ export interface FormCert {
   date: string;
 }
 
-export type TabType = "bio" | "skills" | "projects" | "education";
+export type TabType = "bio" | "skills" | "projects" | "education" | "preferences";

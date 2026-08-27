@@ -170,7 +170,7 @@ export default function AdminView() {
           <h2 className="text-sm font-bold text-slate-100">Full Source Sync</h2>
         </div>
         <p className="text-xs text-slate-400 leading-relaxed">
-          Fetches fresh listings from all enabled zero-cost sources (Arbeitnow + Jobicy)
+          Fetches fresh listings from all enabled zero-cost sources (Arbeitnow, Jobicy, Greenhouse, Lever)
           and upserts them into the database. Runs in the background — you can navigate away.
         </p>
 
@@ -201,6 +201,8 @@ export default function AdminView() {
           <p className="text-[10px] text-slate-500 font-mono">
             Arbeitnow: up to {syncPages} pages × 100 jobs = {syncPages * 100} max listings<br />
             Jobicy: 50 remote jobs (API cap)<br />
+            Greenhouse: {syncPages * 10} jobs/board × {14} curated boards (no key)<br />
+            Lever: {syncPages * 10} jobs/company × {15} curated companies (no key)<br />
             Adzuna: included only if ADZUNA_APP_ID and ADZUNA_APP_KEY are configured
           </p>
         </div>
@@ -268,7 +270,7 @@ export default function AdminView() {
         <ul className="text-[11px] text-slate-500 space-y-1 leading-relaxed list-disc pl-4">
           <li>Jobs are deduplicated by <code className="text-slate-400">external_id</code> (SHA-256 fingerprint of slug + company).</li>
           <li>DB cache TTL is 6 hours — after that, <code className="text-slate-400">/jobs/find</code> re-fetches from live sources.</li>
-          <li>Arbeitnow and Jobicy require no API key. Adzuna is optional.</li>
+          <li>Arbeitnow, Jobicy, Greenhouse, and Lever require no API key. Adzuna is optional.</li>
           <li>No automated LinkedIn scraping — only approved APIs and manual imports per spec.</li>
           <li>Semantic matching uses pgvector cosine similarity via the Supabase <code className="text-slate-400">match_jobs</code> RPC.</li>
         </ul>

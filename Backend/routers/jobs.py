@@ -260,6 +260,8 @@ async def list_job_sources(_: str = Depends(get_current_user_id)):
     """
     from services.arbeitnow import health_check as ar_health
     from services.jobicy import health_check as jc_health
+    from services.greenhouse import health_check as gh_health
+    from services.lever import health_check as lv_health
 
     sources = []
 
@@ -283,6 +285,28 @@ async def list_job_sources(_: str = Depends(get_current_user_id)):
         "description": "Remote-first job feed — no API key required.",
         "url": "https://jobicy.com",
         "health": jc_status,
+    })
+
+    gh_status = await gh_health()
+    sources.append({
+        "id": "greenhouse",
+        "name": "Greenhouse",
+        "type": "public_api",
+        "requires_key": False,
+        "description": "ATS board feeds from 14 curated tech companies — no API key required.",
+        "url": "https://boards-api.greenhouse.io",
+        "health": gh_status,
+    })
+
+    lv_status = await lv_health()
+    sources.append({
+        "id": "lever",
+        "name": "Lever",
+        "type": "public_api",
+        "requires_key": False,
+        "description": "ATS postings from 15 curated companies (Netflix, Shopify, Cloudflare…) — no key.",
+        "url": "https://api.lever.co",
+        "health": lv_status,
     })
 
     try:

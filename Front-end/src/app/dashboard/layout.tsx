@@ -17,6 +17,8 @@ import {
   Menu,
   Send,
   Settings,
+  Bell,
+  Shield,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -28,6 +30,8 @@ const navItems = [
   { href: "/dashboard/applications", label: "Applications", icon: Send },
   { href: "/dashboard/skills", label: "Skill Gap", icon: TrendingUp },
   { href: "/dashboard/cover-letters", label: "Cover Letters", icon: Mail },
+  { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
+  { href: "/dashboard/data-rights", label: "Privacy & Data", icon: Shield },
   { href: "/dashboard/admin", label: "Job Sources", icon: Settings },
 ];
 

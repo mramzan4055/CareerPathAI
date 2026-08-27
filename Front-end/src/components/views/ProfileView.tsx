@@ -72,6 +72,12 @@ export default function ProfilePage() {
   
   const [cvId, setCvId] = useState<string | null>(null);
 
+  // ── Tab 5: Preferences ─────────────────────────────────────────────────────
+  const [dailyApplyLimit, setDailyApplyLimit] = useState<number>(10);
+  const [matchAlerts, setMatchAlerts] = useState<boolean>(true);
+  const [appReminders, setAppReminders] = useState<boolean>(true);
+  const [weeklyDigest, setWeeklyDigest] = useState<boolean>(true);
+
   const completion = useMemo(() => computeProfileCompletion({
     name, targetRole, location, phone, linkedin, github, summary,
     skillsCount: languagesList.length + frameworksList.length + databasesList.length + mlDomainList.length,
@@ -105,6 +111,19 @@ export default function ProfilePage() {
           setGithub(profile.github || "");
           setSummary(profile.summary || "");
           setCvId(profile.cv_id || null);
+
+          // Preferences
+          if (profile.daily_apply_limit != null) {
+            setDailyApplyLimit(Number(profile.daily_apply_limit));
+          }
+          if (profile.notification_prefs) {
+            const prefs = typeof profile.notification_prefs === "string"
+              ? JSON.parse(profile.notification_prefs)
+              : profile.notification_prefs;
+            setMatchAlerts(prefs.match_alerts ?? true);
+            setAppReminders(prefs.application_reminders ?? true);
+            setWeeklyDigest(prefs.weekly_digest ?? true);
+          }
 
           // Deserialize projects if stored as JSON in profiles
           if (profile.projects) {
@@ -301,7 +320,14 @@ export default function ProfilePage() {
           experience: serializedExp,
           projects: JSON.stringify(projectsList),
           certifications: JSON.stringify(certificationsList),
-          cv_id: cvId
+          cv_id: cvId,
+          daily_apply_limit: dailyApplyLimit,
+          notification_prefs: {
+            match_alerts: matchAlerts,
+            application_reminders: appReminders,
+            weekly_digest: weeklyDigest,
+            email_notifications: false,
+          },
         });
         
       if (profileError) throw profileError;
@@ -443,6 +469,16 @@ export default function ProfilePage() {
           }`}
         >
           <BookOpen className="h-4 w-4" /> Education & Certs
+        </button>
+        <button
+          onClick={() => setActiveTab("preferences")}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-200 ${
+            activeTab === "preferences"
+              ? "bg-slate-900 text-emerald-400 border border-emerald-500/20"
+              : "text-slate-400 hover:text-slate-200 hover:bg-slate-900/50"
+          }`}
+        >
+          <Target className="h-4 w-4" /> Preferences
         </button>
       </div>
 
@@ -641,6 +677,92 @@ export default function ProfilePage() {
               onRemoveCert={handleRemoveCert}
               onCertChange={handleCertChange}
             />
+          )}
+
+          {activeTab === "preferences" && (
+            <div className="space-y-6">
+              {/* Daily Apply Limit */}
+              <div className="p-5 bg-slate-900/30 border border-slate-800/60 rounded-2xl space-y-4">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-200">Application Assistant Limit</h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Maximum job applications you consent to per day. The Application Assistant
+                    enforces this limit — you can always raise or lower it.
+                  </p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <input
+                    type="range"
+                    min={1}
+                    max={50}
+                    value={dailyApplyLimit}
+                    onChange={(e) => setDailyApplyLimit(Number(e.target.value))}
+                    className="flex-1 accent-emerald-500"
+                  />
+                  <span className="text-2xl font-black text-emerald-400 w-12 text-center">
+                    {dailyApplyLimit}
+                  </span>
+                  <span className="text-xs text-slate-400">/ day</span>
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  Recommended: 5–15 per day for thoughtful, quality applications.
+                </p>
+              </div>
+
+              {/* Notification Preferences */}
+              <div className="p-5 bg-slate-900/30 border border-slate-800/60 rounded-2xl space-y-4">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-200">Notification Preferences</h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Control which in-app alerts you receive. Email notifications require backend
+                    SMTP configuration.
+                  </p>
+                </div>
+                {[
+                  {
+                    key: "match_alerts",
+                    label: "Job Match Alerts",
+                    desc: "Notify when new jobs match your profile",
+                    value: matchAlerts,
+                    set: setMatchAlerts,
+                  },
+                  {
+                    key: "app_reminders",
+                    label: "Application Reminders",
+                    desc: "Follow-up prompts for applications in progress",
+                    value: appReminders,
+                    set: setAppReminders,
+                  },
+                  {
+                    key: "weekly_digest",
+                    label: "Weekly Digest",
+                    desc: "Summary of your job search activity",
+                    value: weeklyDigest,
+                    set: setWeeklyDigest,
+                  },
+                ].map(({ key, label, desc, value, set }) => (
+                  <div key={key} className="flex items-center justify-between py-2 border-b border-slate-800/50 last:border-0">
+                    <div>
+                      <div className="text-sm font-medium text-slate-200">{label}</div>
+                      <div className="text-xs text-slate-500">{desc}</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => set(!value)}
+                      className={`relative inline-flex h-5 w-9 items-center rounded-full transition-colors ${
+                        value ? "bg-emerald-500" : "bg-slate-700"
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform ${
+                          value ? "translate-x-4" : "translate-x-1"
+                        }`}
+                      />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
 
           {/* Form Actions */}

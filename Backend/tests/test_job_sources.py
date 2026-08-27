@@ -250,3 +250,221 @@ async def test_get_jobs_multi_source_fallback_to_live():
 
     assert result["total"] >= 1
     assert any(j["job_title"] == "DevOps Engineer" for j in result["data"])
+
+
+# ── Greenhouse ───────────────────────────────────────────────────────────────
+
+GREENHOUSE_JOB = {
+    "_board_token": "airbnb",
+    "id": 4567890,
+    "title": "Staff Software Engineer",
+    "departments": [{"name": "Engineering"}],
+    "offices": [{"name": "San Francisco, CA"}],
+    "content": "<p>We are looking for a <strong>Staff Engineer</strong> to join our team.</p><ul><li>5+ years experience</li></ul>",
+    "absolute_url": "https://boards.greenhouse.io/airbnb/jobs/4567890",
+    "updated_at": "2026-08-01T00:00:00Z",
+}
+
+GREENHOUSE_REMOTE_JOB = {
+    "_board_token": "vercel",
+    "id": 999111,
+    "title": "Remote Senior Frontend Engineer",
+    "departments": [{"name": "Product"}],
+    "offices": [{"name": "Remote"}],
+    "content": "<p>Work from anywhere on our frontend platform.</p>",
+    "absolute_url": "https://boards.greenhouse.io/vercel/jobs/999111",
+    "updated_at": "2026-07-15T00:00:00Z",
+}
+
+
+def test_greenhouse_normalize():
+    from services.greenhouse import normalize, validate
+
+    norm = normalize(GREENHOUSE_JOB)
+    assert norm["job_title"] == "Staff Software Engineer"
+    assert norm["company"] == "Airbnb"
+    assert norm["location"] == "San Francisco, CA"
+    assert "<p>" not in norm["clean_description"]       # HTML stripped
+    assert "Staff Engineer" in norm["clean_description"]
+    assert norm["source"] == "greenhouse"
+    assert norm["remote"] is False
+    assert validate(norm) is True
+
+
+def test_greenhouse_normalize_remote():
+    from services.greenhouse import normalize
+
+    norm = normalize(GREENHOUSE_REMOTE_JOB)
+    assert norm["remote"] is True
+    assert norm["company"] == "Vercel"
+
+
+def test_greenhouse_validate_rejects_empty():
+    from services.greenhouse import validate
+
+    assert validate({"job_title": "", "company": "X", "clean_description": "desc", "url": "http://x"}) is False
+    assert validate({"job_title": "T", "company": "X", "clean_description": "x", "url": "http://x"}) is False  # desc too short
+
+
+@pytest.mark.asyncio
+async def test_greenhouse_health_check_ok():
+    from services.greenhouse import health_check
+
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"jobs": [{"id": 1}, {"id": 2}]}
+    mock_response.raise_for_status = MagicMock()
+
+    with patch("httpx.AsyncClient") as mock_client_cls:
+        mock_client = AsyncMock()
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=False)
+        mock_client.get = AsyncMock(return_value=mock_response)
+        mock_client_cls.return_value = mock_client
+
+        result = await health_check()
+
+    assert result["status"] == "ok"
+    assert result["source"] == "greenhouse"
+
+
+@pytest.mark.asyncio
+async def test_greenhouse_sync_returns_valid_jobs():
+    from services.greenhouse import sync
+
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"jobs": [GREENHOUSE_JOB]}
+    mock_response.raise_for_status = MagicMock()
+
+    with patch("httpx.AsyncClient") as mock_client_cls:
+        mock_client = AsyncMock()
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=False)
+        mock_client.get = AsyncMock(return_value=mock_response)
+        mock_client_cls.return_value = mock_client
+
+        jobs = await sync(board_tokens=["airbnb"], max_per_board=5)
+
+    assert len(jobs) == 1
+    assert jobs[0]["source"] == "greenhouse"
+
+
+# ── Lever ────────────────────────────────────────────────────────────────────
+
+LEVER_JOB = {
+    "_company_slug": "shopify",
+    "id": "abc123-def456",
+    "text": "Senior Backend Engineer",
+    "categories": {
+        "team": "Infrastructure",
+        "location": "Remote",
+        "commitment": "Full-time",
+    },
+    "description": "<p>We are building <strong>the future</strong> of commerce.</p>",
+    "additional": "<p>You will work on distributed systems.</p>",
+    "lists": [
+        {"text": "Requirements", "content": "<li>5+ years Go experience</li><li>Kubernetes</li>"}
+    ],
+    "urls": {"show": "https://jobs.lever.co/shopify/abc123", "apply": "https://jobs.lever.co/shopify/abc123/apply"},
+    "createdAt": 1700000000000,
+    "salaryDescription": "$150k - $200k",
+}
+
+LEVER_PARTTIME_JOB = {
+    "_company_slug": "netflix",
+    "id": "xyz789",
+    "text": "Part-time Data Analyst",
+    "categories": {
+        "team": "Analytics",
+        "location": "Los Angeles, CA",
+        "commitment": "Part-time",
+    },
+    "description": "<p>Analyze streaming data.</p>",
+    "additional": "",
+    "lists": [],
+    "urls": {"show": "https://jobs.lever.co/netflix/xyz789"},
+    "createdAt": 1700000000000,
+}
+
+
+def test_lever_normalize():
+    from services.lever import normalize, validate
+
+    norm = normalize(LEVER_JOB)
+    assert norm["job_title"] == "Senior Backend Engineer"
+    assert norm["company"] == "Shopify"
+    assert norm["remote"] is True
+    assert "<p>" not in norm["clean_description"]
+    assert "future" in norm["clean_description"]     # HTML stripped but text preserved
+    assert norm["contract_type"] == "full-time"
+    assert norm["salary_min"] == 150000.0
+    assert norm["salary_max"] == 200000.0
+    assert norm["source"] == "lever"
+    assert validate(norm) is True
+
+
+def test_lever_normalize_parttime():
+    from services.lever import normalize
+
+    norm = normalize(LEVER_PARTTIME_JOB)
+    assert norm["contract_type"] == "part-time"
+    assert norm["remote"] is False
+    assert norm["company"] == "Netflix"
+
+
+def test_lever_validate_rejects_short_description():
+    from services.lever import validate
+
+    assert validate({
+        "job_title": "Engineer",
+        "company": "Corp",
+        "clean_description": "Short",   # < 20 chars
+        "url": "http://x",
+    }) is False
+
+
+@pytest.mark.asyncio
+async def test_lever_health_check_ok():
+    from services.lever import health_check
+
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = [LEVER_JOB, LEVER_PARTTIME_JOB]
+    mock_response.raise_for_status = MagicMock()
+
+    with patch("httpx.AsyncClient") as mock_client_cls:
+        mock_client = AsyncMock()
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=False)
+        mock_client.get = AsyncMock(return_value=mock_response)
+        mock_client_cls.return_value = mock_client
+
+        result = await health_check()
+
+    assert result["status"] == "ok"
+    assert result["source"] == "lever"
+    assert result["sample_jobs"] == 2
+
+
+@pytest.mark.asyncio
+async def test_lever_sync_returns_valid_jobs():
+    from services.lever import sync
+
+    mock_response = MagicMock()
+    mock_response.status_code = 200
+    mock_response.json.return_value = [LEVER_JOB]
+    mock_response.raise_for_status = MagicMock()
+
+    with patch("httpx.AsyncClient") as mock_client_cls:
+        mock_client = AsyncMock()
+        mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+        mock_client.__aexit__ = AsyncMock(return_value=False)
+        mock_client.get = AsyncMock(return_value=mock_response)
+        mock_client_cls.return_value = mock_client
+
+        jobs = await sync(company_slugs=["shopify"], max_per_company=5)
+
+    assert len(jobs) == 1
+    assert jobs[0]["source"] == "lever"
+    assert jobs[0]["salary_min"] == 150000.0
