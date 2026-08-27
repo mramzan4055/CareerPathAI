@@ -20,6 +20,7 @@ import {
   Bell,
   Shield,
   Sparkles,
+  User,
   X,
 } from "lucide-react";
 import { useState } from "react";
@@ -33,6 +34,7 @@ const NAV_SECTIONS = [
       { href: "/dashboard",             label: "Overview",       icon: LayoutDashboard },
       { href: "/dashboard/cv",          label: "Upload CV",      icon: FileText },
       { href: "/dashboard/resume",      label: "Resume Lab",     icon: Sparkles },
+      { href: "/dashboard/profile",     label: "Profile",        icon: User },
     ],
   },
   {

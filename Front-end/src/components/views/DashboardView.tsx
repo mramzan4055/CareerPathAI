@@ -20,6 +20,7 @@ import {
   Zap,
   Star,
   ArrowRight,
+  User,
 } from "lucide-react";
 
 export default function DashboardPage() {
@@ -112,6 +113,19 @@ export default function DashboardPage() {
   const skillsCount = profile?.skills
     ? profile.skills.split(",").map((s: string) => s.trim()).filter(Boolean).length
     : 0;
+
+  // Profile completion: 5 weighted fields → percentage
+  const profileCompletion = (() => {
+    if (!profile) return 0;
+    const checks = [
+      !!profile.name,
+      !!profile.target_role,
+      !!profile.location,
+      !!profile.skills && profile.skills.trim().length > 0,
+      !!profile.education && profile.education.trim().length > 0,
+    ];
+    return Math.round((checks.filter(Boolean).length / checks.length) * 100);
+  })();
 
   if (profileLoading) {
     return (
@@ -321,8 +335,9 @@ export default function DashboardPage() {
           </div>
 
           {/* Stats Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             
+            {/* Top Match — ring gauge */}
             <div className="p-5 bg-slate-900/30 border border-slate-800/80 rounded-2xl flex items-center justify-between hover:border-slate-700 transition-colors">
               <div>
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Top Match</span>
@@ -344,6 +359,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
+            {/* Matched Roles */}
             <div 
               onClick={() => router.push("/dashboard/jobs")}
               className="p-5 bg-slate-900/30 border border-slate-800/80 rounded-2xl flex items-center justify-between cursor-pointer hover:border-blue-500/40 transition-colors"
@@ -358,6 +374,7 @@ export default function DashboardPage() {
               </div>
             </div>
 
+            {/* Skills Found */}
             <div 
               onClick={() => router.push("/dashboard/skills")}
               className="p-5 bg-slate-900/30 border border-slate-800/80 rounded-2xl flex items-center justify-between cursor-pointer hover:border-blue-500/40 transition-colors"
@@ -369,6 +386,40 @@ export default function DashboardPage() {
               </div>
               <div className="h-10 w-10 rounded-xl bg-cyan-500/10 flex items-center justify-center text-cyan-400 border border-cyan-500/20 shrink-0">
                 <FileText className="w-5 h-5" />
+              </div>
+            </div>
+
+            {/* Profile Completion — ring gauge */}
+            <div
+              onClick={() => router.push("/dashboard/profile")}
+              className="p-5 bg-slate-900/30 border border-slate-800/80 rounded-2xl flex items-center justify-between cursor-pointer hover:border-violet-500/40 transition-colors group"
+            >
+              <div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Profile</span>
+                <span className="text-3xl font-black text-violet-400 block">{profileCompletion}%</span>
+                <span className="text-[10px] mt-1 block font-bold">
+                  {profileCompletion === 100
+                    ? <span className="text-emerald-400 flex items-center gap-1"><Zap className="w-3 h-3" /> Complete</span>
+                    : <span className="text-slate-500">Complete your profile</span>
+                  }
+                </span>
+              </div>
+              <div className="w-14 h-14 relative shrink-0">
+                <svg className="w-full h-full transform -rotate-90">
+                  <circle cx="28" cy="28" r="22" stroke="#1e293b" strokeWidth="4" fill="none" />
+                  <circle
+                    cx="28" cy="28" r="22"
+                    stroke="#8b5cf6"
+                    strokeWidth="4"
+                    fill="none"
+                    strokeDasharray="138"
+                    strokeDashoffset={138 - (138 * profileCompletion) / 100}
+                    className="transition-all duration-1000"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <User className="w-4 h-4 text-violet-400 group-hover:scale-110 transition-transform" />
+                </div>
               </div>
             </div>
 

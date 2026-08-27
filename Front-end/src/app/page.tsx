@@ -220,7 +220,7 @@ export default function LandingPage() {
         {/* Hero visual — Dashboard mockup */}
         <div className="relative max-w-5xl mx-auto mt-20">
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#030712] z-10 pointer-events-none rounded-3xl" />
-          <div className="relative rounded-3xl border border-white/[0.08] bg-[#070b14]/80 backdrop-blur-sm overflow-hidden shadow-2xl shadow-black/50">
+          <div className="relative rounded-3xl border border-white/[0.08] bg-[#070b14]/80 backdrop-blur-sm overflow-hidden shadow-2xl shadow-black/50 ring-1 ring-blue-500/10 shadow-[0_0_80px_-20px_rgba(59,130,246,0.25)]">
             {/* Fake browser chrome */}
             <div className="flex items-center gap-2 px-4 py-3 border-b border-white/[0.06] bg-[#050a12]">
               <div className="flex gap-1.5">
@@ -321,9 +321,11 @@ export default function LandingPage() {
 
       {/* ── Stats Band ────────────────────────────────────────────────── */}
       <section className="border-y border-white/[0.06] bg-[#070b14]/50">
-        <div className="max-w-5xl mx-auto px-6 py-12 grid grid-cols-1 sm:grid-cols-3 gap-8">
-          {STATS.map(stat => (
-            <div key={stat.unit} className="text-center">
+        <div className="max-w-5xl mx-auto px-6 py-12 grid grid-cols-1 sm:grid-cols-3">
+          {STATS.map((stat, i) => (
+            <div key={stat.unit} className={`text-center py-4 ${
+              i > 0 ? "sm:border-l sm:border-white/[0.06]" : ""
+            }`}>
               <div className={`text-5xl font-black ${stat.color} mb-1 tracking-tight`}>{stat.value}</div>
               <div className="text-slate-200 font-bold text-sm mb-1">{stat.unit}</div>
               <div className="text-slate-500 text-xs">{stat.sub}</div>
